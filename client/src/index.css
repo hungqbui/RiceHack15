@@ -12,7 +12,11 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
-  --primary-color: ;
+  --primary-color: 	#03045e;
+  --secondary-color: #0077b6;
+  --third-color: #00b4d8;
+  --forth-color: #90e0ef;
+  --fifth-color:  #caf0f8; 
 }
 
 a {
