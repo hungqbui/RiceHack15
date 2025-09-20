@@ -14,7 +14,7 @@ google-generativeai>=0.7.0
 
 # MongoDB Vector Database
 pymongo==4.6.0
-langchain-mongodb==0.1.3
+langchain-mongodb==0.1.6
 
 # PDF processing
 PyPDF2==3.0.1
@@ -33,3 +33,7 @@ python-socketio[client]==5.9.0
 
 # Testing
 requests==2.31.0
+
+# Authentication and Security
+PyJWT==2.8.0
+bcrypt==4.0.1

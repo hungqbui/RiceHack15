@@ -198,7 +198,7 @@ Educational response:"""
         else:
             return f"doc_{timestamp}_{unique_id}"
     
-    def extract_text_from_pdf(self, pdf_file, filename: str = None) -> Dict[str, str]:
+    def extract_text_from_pdf(self, pdf_file, filename: str = None, user_id: str = None) -> Dict[str, str]:
         """
         Extract text from PDF file using PyMuPDF (fitz) with proper FileStorage handling
         
@@ -218,7 +218,8 @@ Educational response:"""
                 'method': 'combined',
                 'success': True,
                 'upload_timestamp': datetime.now().isoformat(),
-                'file_type': 'pdf'
+                'file_type': 'pdf',
+                'user_id': user_id
             }
             
             # Handle different input types
@@ -381,7 +382,7 @@ Educational response:"""
             logger.warning(f"Image preprocessing failed: {str(e)}, using original image")
             return image
     
-    def extract_text_from_image(self, image_file, filename: str = None) -> Dict[str, str]:
+    def extract_text_from_image(self, image_file, filename: str = None, user_id: str = None) -> Dict[str, str]:
         """
         Extract text from image using OCR (Tesseract)
         
@@ -419,7 +420,8 @@ Educational response:"""
                 'avg_confidence': round(avg_confidence, 2),
                 'text_length': len(extracted_text.strip()),
                 'upload_timestamp': datetime.now().isoformat(),
-                'file_type': 'image'
+                'file_type': 'image',
+                'user_id': user_id
             }
             
             if not extracted_text.strip():
@@ -450,7 +452,7 @@ Educational response:"""
                 'message': f'Error processing image: {str(e)}'
             }
     
-    def add_documents_to_rag(self, texts: List[str], sources: List[str] = None, file_ids: List[str] = None, extra_metadata: List[Dict] = None) -> Dict:
+    def add_documents_to_rag(self, texts: List[str], sources: List[str] = None, file_ids: List[str] = None, extra_metadata: List[Dict] = None, user_id: str = None) -> Dict:
         """
         Add documents to MongoDB Vector RAG system with enhanced metadata
         
@@ -492,6 +494,7 @@ Educational response:"""
                         'total_chunks': len(chunks),
                         'chunk_length': len(chunk),
                         'timestamp': datetime.now().isoformat(),
+                        'user_id': user_id,
                         **base_metadata  # Include any extra metadata
                     }
                     chunk_metadatas.append(chunk_metadata)
@@ -516,7 +519,7 @@ Educational response:"""
                 'message': f'Error adding documents: {str(e)}'
             }
     
-    def get_documents_by_file_id(self, file_id: str, limit: int = 10) -> Dict:
+    def get_documents_by_file_id(self, file_id: str, limit: int = 10, user_id: str = None) -> Dict:
         """
         Retrieve documents from the vector store by file ID
         
@@ -538,9 +541,13 @@ Educational response:"""
             # Query MongoDB collection directly for file-specific documents
             collection = self.mongo_client[self.db_name][self.collection_name]
             
-            # Find documents with matching file_id
+            # Find documents with matching file_id and user_id
+            query_filter = {'file_id': file_id}
+            if user_id:
+                query_filter['user_id'] = user_id
+                
             cursor = collection.find(
-                {'file_id': file_id},
+                query_filter,
                 limit=limit
             ).sort('chunk_index', 1)  # Sort by chunk index
             
@@ -561,7 +568,7 @@ Educational response:"""
                 'documents': []
             }
     
-    def get_file_specific_context(self, file_id: str, question: str, max_chunks: int = 4) -> Dict:
+    def get_file_specific_context(self, file_id: str, question: str, max_chunks: int = 4, user_id: str = None) -> Dict:
         """
         Get context from a specific file for RAG
         
@@ -581,11 +588,15 @@ Educational response:"""
                     'context': ''
                 }
             
-            # Perform similarity search with file_id filter
+            # Perform similarity search with file_id and user_id filter
+            search_filter = {'file_id': file_id}
+            if user_id:
+                search_filter['user_id'] = user_id
+                
             relevant_docs = self.vector_store.similarity_search(
                 question,
                 k=max_chunks * 2,  # Get more docs to filter by file_id
-                filter={'file_id': file_id}  # Filter by specific file
+                filter=search_filter  # Filter by specific file and user
             )
             
             # Take only the requested number of chunks
@@ -636,7 +647,7 @@ Educational response:"""
             logger.error(f"Error creating retrieval system: {str(e)}")
             self.qa_chain = None
     
-    def educational_chat(self, question: str, file_ids: list = None) -> Dict:
+    def educational_chat(self, question: str, file_ids: list = None, user_id: str = None) -> Dict:
         """
         Answer educational questions using direct MongoDB retrieval + Gemini
         
@@ -674,8 +685,15 @@ Educational response:"""
                     sources = []
                 relevant_docs = []  # We already have the context
             else:
-                # Use all documents when no specific files are selected
-                relevant_docs = self.vector_store.similarity_search(question, k=10)
+                # Use all documents when no specific files are selected, filter by user
+                search_filter = {}
+                if user_id:
+                    search_filter['user_id'] = user_id
+                
+                if search_filter:
+                    relevant_docs = self.vector_store.similarity_search(question, k=10, filter=search_filter)
+                else:
+                    relevant_docs = self.vector_store.similarity_search(question, k=10)
             
             # if not relevant_docs:
             #     return {
@@ -729,7 +747,7 @@ Educational response:"""
                 'status': 'error'
             }
     
-    def educational_audio_chat(self, audio_data: bytes, mime_type: str, file_ids: list = None) -> Dict:
+    def educational_audio_chat(self, audio_data: bytes, mime_type: str, file_ids: list = None, user_id: str = None) -> Dict:
         """
         Answer educational questions using direct audio input to Gemini with RAG context
         
@@ -795,8 +813,15 @@ Respond with just the transcribed text, focusing on the key question or learning
                                 } for src in sources]
                                 logger.info(f"Retrieved context from {len(file_ids)} selected files for audio question")
                         else:
-                            # Use all documents when no specific files are selected
-                            relevant_docs = self.vector_store.similarity_search(transcribed_question, k=8)
+                            # Use all documents when no specific files are selected, filter by user
+                            search_filter = {}
+                            if user_id:
+                                search_filter['user_id'] = user_id
+                            
+                            if search_filter:
+                                relevant_docs = self.vector_store.similarity_search(transcribed_question, k=8, filter=search_filter)
+                            else:
+                                relevant_docs = self.vector_store.similarity_search(transcribed_question, k=8)
                             if relevant_docs:
                                 context = "\n\n".join([doc.page_content for doc in relevant_docs])
                                 sources = [{
@@ -940,7 +965,7 @@ Since no specific educational materials are available in the knowledge base, ple
                 'message': f'Error clearing knowledge base: {str(e)}'
             }
     
-    def get_multiple_files_context(self, file_ids, query, max_chunks_per_file=3):
+    def get_multiple_files_context(self, file_ids, query, max_chunks_per_file=3, user_id: str = None):
         """
         Get context from multiple files for a query
         
@@ -962,7 +987,7 @@ Since no specific educational materials are available in the knowledge base, ple
             for file_id in file_ids:
                 try:
                     context_result = self.get_file_specific_context(
-                        file_id, query, max_chunks_per_file
+                        file_id, query, max_chunks_per_file, user_id
                     )
                     
                     if context_result['status'] == 'success':
@@ -1016,7 +1041,7 @@ Since no specific educational materials are available in the knowledge base, ple
                 'message': f'Error getting multiple files context: {str(e)}'
             }
     
-    def get_files_summary(self, file_ids):
+    def get_files_summary(self, file_ids, user_id: str = None):
         """
         Get summary information for multiple files
         
@@ -1034,7 +1059,7 @@ Since no specific educational materials are available in the knowledge base, ple
             
             for file_id in file_ids:
                 try:
-                    result = self.get_documents_by_file_id(file_id)
+                    result = self.get_documents_by_file_id(file_id, user_id=user_id)
                     
                     if result['status'] == 'success':
                         # Get basic file metadata from first document
@@ -1084,7 +1109,7 @@ Since no specific educational materials are available in the knowledge base, ple
                 'message': f'Error getting files summary: {str(e)}'
             }
     
-    def generate_quiz(self, file_ids: list = None, quiz_prompt: str = None, quiz_type: str = "mixed", num_questions: int = 5) -> Dict:
+    def generate_quiz(self, file_ids: list = None, quiz_prompt: str = None, quiz_type: str = "mixed", num_questions: int = 5, user_id: str = None) -> Dict:
         """
         Generate a quiz or mock exam based on selected context
         
@@ -1112,12 +1137,12 @@ Since no specific educational materials are available in the knowledge base, ple
             if self.vector_store:
                 if file_ids:
                     # Use specific files for quiz generation
-                    context_result = self.get_files_summary(file_ids)
+                    context_result = self.get_files_summary(file_ids, user_id)
                     if context_result['status'] == 'success':
                         # Get actual content from the files
                         all_content = []
                         for file_id in file_ids:
-                            file_result = self.get_documents_by_file_id(file_id)
+                            file_result = self.get_documents_by_file_id(file_id, user_id=user_id)
                             if file_result['status'] == 'success':
                                 file_content = "\n".join([doc.get('content', '') for doc in file_result['documents']])
                                 filename = file_result['documents'][0].get('metadata', {}).get('filename', 'Unknown') if file_result['documents'] else 'Unknown'
@@ -1132,8 +1157,15 @@ Since no specific educational materials are available in the knowledge base, ple
                     # Use a broad search to get representative content
                     search_terms = ["definition", "concept", "theory", "formula", "principle", "method"]
                     relevant_docs = []
+                    search_filter = {}
+                    if user_id:
+                        search_filter['user_id'] = user_id
+                        
                     for term in search_terms:
-                        docs = self.vector_store.similarity_search(term, k=3)
+                        if search_filter:
+                            docs = self.vector_store.similarity_search(term, k=3, filter=search_filter)
+                        else:
+                            docs = self.vector_store.similarity_search(term, k=3)
                         relevant_docs.extend(docs)
                     
                     # Remove duplicates and limit

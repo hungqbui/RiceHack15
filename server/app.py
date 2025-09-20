@@ -7,6 +7,7 @@ import logging
 from dotenv import load_dotenv
 from werkzeug.utils import secure_filename
 from educational_service import get_educational_service
+from auth_service import get_auth_service, require_auth
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -47,7 +48,7 @@ def home():
     return jsonify({
         'message': 'Educational AI Flask App with WebSocket Audio Support!',
         'status': 'healthy',
-        'features': ['Direct Audio Processing', 'Text Chat', 'WebSocket Support', 'File Upload']
+        'features': ['Direct Audio Processing', 'Text Chat', 'WebSocket Support', 'File Upload', 'Authentication']
     })
 
 @app.route('/health')
@@ -55,7 +56,97 @@ def health_check():
     """Health check endpoint"""
     return jsonify({'status': 'healthy'}), 200
 
+# Authentication endpoints
+@app.route('/api/auth/register', methods=['POST'])
+def register():
+    """User registration endpoint"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        username = data.get('username', '').strip()
+        email = data.get('email', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not email or not password:
+            return jsonify({'error': 'Username, email, and password are required'}), 400
+        
+        auth_service = get_auth_service()
+        result = auth_service.register_user(username, email, password)
+        
+        if result['success']:
+            return jsonify({
+                'message': result['message'],
+                'token': result['token'],
+                'user': result['user']
+            }), 201
+        else:
+            return jsonify({'error': result['message']}), 400
+            
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return jsonify({'error': 'Registration failed'}), 500
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """User login endpoint"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        username = data.get('username', '').strip()
+        password = data.get('password', '')
+        
+        if not username or not password:
+            return jsonify({'error': 'Username and password are required'}), 400
+        
+        auth_service = get_auth_service()
+        result = auth_service.login_user(username, password)
+        
+        if result['success']:
+            return jsonify({
+                'message': result['message'],
+                'token': result['token'],
+                'user': result['user']
+            }), 200
+        else:
+            return jsonify({'error': result['message']}), 401
+            
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return jsonify({'error': 'Login failed'}), 500
+
+@app.route('/api/auth/verify', methods=['GET'])
+@require_auth
+def verify_token():
+    """Verify token and return user info"""
+    try:
+        user = request.current_user
+        auth_service = get_auth_service()
+        user_info = auth_service.get_user_by_id(user['user_id'])
+        
+        if user_info:
+            return jsonify({
+                'message': 'Token is valid',
+                'user': user_info
+            }), 200
+        else:
+            return jsonify({'error': 'User not found'}), 404
+            
+    except Exception as e:
+        logger.error(f"Token verification error: {e}")
+        return jsonify({'error': 'Token verification failed'}), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+@require_auth
+def logout():
+    """User logout endpoint (client-side token removal)"""
+    return jsonify({'message': 'Logout successful. Please remove token from client.'}), 200
+
 @app.route('/api/chat', methods=['POST'])
+@require_auth
 def chat():
     """Simple text chat endpoint with optional file selection"""
     try:
@@ -65,12 +156,13 @@ def chat():
         
         message = data['message']
         file_ids = data.get('file_ids', None)  # Optional file selection
+        user_id = request.current_user['user_id']  # Get user ID from auth
         
         # Validate file_ids if provided
         if file_ids is not None and not isinstance(file_ids, list):
             return jsonify({'error': 'file_ids must be an array'}), 400
         
-        result = get_educational_service().educational_chat(message, file_ids)
+        result = get_educational_service().educational_chat(message, file_ids, user_id)
         
         # Add file selection info to response
         if file_ids:
@@ -82,6 +174,7 @@ def chat():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/upload', methods=['POST'])
+@require_auth
 def upload_file():
     """Upload and process PDF and image files for RAG"""
     try:
@@ -101,7 +194,7 @@ def upload_file():
         if file_ext in ALLOWED_PDF_EXTENSIONS:
             # Process PDF
             logger.info(f"Processing PDF: {filename}")
-            extraction_result = get_educational_service().extract_text_from_pdf(file, filename)
+            extraction_result = get_educational_service().extract_text_from_pdf(file, filename, user_id=request.current_user['user_id'])
             
             if extraction_result['status'] == 'success':
                 # Add extracted text to RAG system with file metadata
@@ -110,7 +203,8 @@ def upload_file():
                     [extraction_result['text']], 
                     [filename],
                     [file_id],
-                    [extraction_result['metadata']]
+                    [extraction_result['metadata']],
+                    user_id=request.current_user['user_id']
                 )
                 
                 return jsonify({
@@ -189,6 +283,7 @@ def upload_file():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/upload/multiple', methods=['POST'])
+@require_auth
 def upload_multiple_files():
     """Upload and process multiple PDF and image files for RAG"""
     try:
@@ -311,6 +406,7 @@ def upload_multiple_files():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/files', methods=['GET'])
+@require_auth
 def list_files():
     """List all uploaded files with their metadata"""
     try:
@@ -355,10 +451,12 @@ def list_files():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/files/<file_id>', methods=['GET'])
+@require_auth
 def get_file_info(file_id):
     """Get information about a specific file by its ID"""
     try:
-        result = get_educational_service().get_documents_by_file_id(file_id)
+        user_id = request.current_user['user_id']
+        result = get_educational_service().get_documents_by_file_id(file_id, user_id=user_id)
         
         if result['status'] == 'success':
             return jsonify({
@@ -379,6 +477,7 @@ def get_file_info(file_id):
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/chat/file/<file_id>', methods=['POST'])
+@require_auth
 def chat_with_file(file_id):
     """Chat with a specific file using its file ID"""
     try:
@@ -388,10 +487,11 @@ def chat_with_file(file_id):
         
         question = data['message']
         max_chunks = data.get('max_chunks', 4)
+        user_id = request.current_user['user_id']
         
         # Get file-specific context
         context_result = get_educational_service().get_file_specific_context(
-            file_id, question, max_chunks
+            file_id, question, max_chunks, user_id
         )
         
         if context_result['status'] != 'success':
@@ -495,6 +595,7 @@ def get_multiple_files_info():
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/chat/files', methods=['POST'])
+@require_auth
 def chat_with_multiple_files():
     """Chat with multiple files using their file IDs"""
     try:
@@ -505,6 +606,7 @@ def chat_with_multiple_files():
         file_ids = data['file_ids']
         question = data['message']
         max_chunks_per_file = data.get('max_chunks_per_file', 2)
+        user_id = request.current_user['user_id']
         
         if not isinstance(file_ids, list) or not file_ids:
             return jsonify({'error': 'file_ids must be a non-empty array'}), 400
@@ -517,7 +619,7 @@ def chat_with_multiple_files():
         
         for file_id in file_ids:
             context_result = get_educational_service().get_file_specific_context(
-                file_id, question, max_chunks_per_file
+                file_id, question, max_chunks_per_file, user_id
             )
             
             if context_result['status'] == 'success':
@@ -575,6 +677,7 @@ Educational response based on these documents:"""
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/quiz/generate', methods=['POST'])
+@require_auth
 def generate_quiz():
     """Generate a quiz or mock exam based on selected context"""
     try:
@@ -587,6 +690,7 @@ def generate_quiz():
         quiz_prompt = data.get('quiz_prompt', None)  # Optional custom instructions
         quiz_type = data.get('quiz_type', 'mixed')  # multiple_choice, short_answer, essay, mixed
         num_questions = data.get('num_questions', 5)  # Number of questions
+        user_id = request.current_user['user_id']  # Get user ID from auth
         
         # Validate inputs
         if file_ids is not None and not isinstance(file_ids, list):
@@ -606,7 +710,8 @@ def generate_quiz():
             file_ids=file_ids,
             quiz_prompt=quiz_prompt,
             quiz_type=quiz_type,
-            num_questions=num_questions
+            num_questions=num_questions,
+            user_id=user_id
         )
         
         return jsonify(result)
