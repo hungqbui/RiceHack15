@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Question } from '../components/quizTypes';
 import { useQuiz } from '../contexts/QuizContext';
 
@@ -14,6 +15,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
 }) => {
   // Get the context function if no prop is provided
   const { onQuestionUpdate: contextOnQuestionUpdate, settings } = useQuiz();
+  const navigate = useNavigate();
   
   // Use prop function if provided, otherwise use context function
   const handleQuestionUpdate = propOnQuestionUpdate || contextOnQuestionUpdate;
@@ -21,6 +23,25 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
   // Store the original generated answer to show when it was AI-generated
   const [originalCorrectAnswer] = React.useState(question.correctAnswer);
   const [originalAnswer] = React.useState(question.answer);
+
+  // Handle navigation to conversation page with question persisted
+  const handleGoToConversation = () => {
+    // Store the question in sessionStorage or localStorage for persistence
+    const questionData = {
+      question: question.text,
+      type: question.type,
+      options: question.options,
+      answer: question.answer,
+      correctAnswer: question.correctAnswer,
+      timestamp: Date.now()
+    };
+    
+    // Store in sessionStorage so it persists during the session
+    sessionStorage.setItem('conversationQuestion', JSON.stringify(questionData));
+    
+    // Navigate to conversation page
+    navigate('/convo');
+  };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleQuestionUpdate({ ...question, text: e.target.value });
@@ -80,15 +101,24 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
 
   return (
     <div className="mb-6 p-4 border border-gray-300 rounded-md">
-      <div className="flex items-center mb-2 space-x-2">
-        <span className="font-bold text-lg text-gray-800">Question {question.id}:</span>
-        <input
-          type="text"
-          value={question.text}
-          onChange={handleTextChange}
-          placeholder="Type your question here..."
-          className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-        />
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-2 flex-1">
+          <span className="font-bold text-lg text-gray-800">Question {question.id}:</span>
+          <input
+            type="text"
+            value={question.text}
+            onChange={handleTextChange}
+            placeholder="Type your question here..."
+            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+          />
+        </div>
+        <button
+          onClick={handleGoToConversation}
+          className="ml-3 px-3 py-2 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 whitespace-nowrap"
+          title="Discuss this question in conversation"
+        >
+          💬 Discuss
+        </button>
       </div>
 
       {question.type === 'multiple_choice' && (
