@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useQuiz } from '../contexts/QuizContext';
 import QuizActions from './quizButton';
 import type { Question, QuizResult } from '../components/quizTypes';
+import "./quizUser.css"
 
 interface QuizPlayerProps {
   onQuizComplete?: (result: QuizResult) => void;
@@ -21,6 +22,15 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ onQuizComplete }) => {
   const [isLoading, setIsLoading] = useState(false);
 
   const currentQuestion = questions[currentQuestionIndex];
+
+  // Debug: Log current question to see its structure
+  useEffect(() => {
+    if (currentQuestion) {
+      console.log('Current question:', currentQuestion);
+      console.log('Question type:', currentQuestion.type);
+      console.log('Question options:', currentQuestion.options);
+    }
+  }, [currentQuestion]);
 
   // Timer setup
   useEffect(() => {
@@ -48,9 +58,9 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ onQuizComplete }) => {
 
     // Check if answer is correct
     let isCorrect = false;
-    if (currentQuestion.type === 'multiple-choice') {
+    if (currentQuestion.type === 'multiple_choice') {
       isCorrect = answer === currentQuestion.correctAnswer;
-    } else if (currentQuestion.type === 'blank-filling') {
+    } else if (currentQuestion.type === 'blank_filling') {
       isCorrect = answer.toString().toLowerCase().trim() === 
                   currentQuestion.answer?.toLowerCase().trim();
     }
@@ -185,7 +195,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ onQuizComplete }) => {
         </h2>
 
         {/* Multiple Choice Options */}
-        {currentQuestion.type === 'multiple-choice' && currentQuestion.options && (
+        {currentQuestion.type === 'multiple_choice' && currentQuestion.options && (
           <div className="options space-y-3">
             {currentQuestion.options.map((option, index) => (
               <label
@@ -202,9 +212,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ onQuizComplete }) => {
                   onChange={() => handleAnswerSelect(index)}
                   className="mr-3"
                 />
-                <span className="font-medium text-gray-700 mr-2">
-                  {String.fromCharCode(65 + index)})
-                </span>
+
                 <span>{option}</span>
               </label>
             ))}
@@ -212,7 +220,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ onQuizComplete }) => {
         )}
 
         {/* Fill in the Blank */}
-        {currentQuestion.type === 'blank-filling' && (
+        {currentQuestion.type === 'blank_filling' && (
           <div className="answer-input">
             <input
               type="text"
@@ -229,7 +237,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ onQuizComplete }) => {
           <div className="hints mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-yellow-800">
               💡 <strong>Hint:</strong> Read the question carefully and consider all the options before making your choice.
-              {currentQuestion.type === 'blank-filling' && 
+              {currentQuestion.type === 'blank_filling' && 
                 ' Think about the most appropriate and complete answer.'}
             </p>
           </div>
@@ -240,7 +248,7 @@ const QuizPlayer: React.FC<QuizPlayerProps> = ({ onQuizComplete }) => {
           <div className="answer-preview mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
             <p className="text-green-800">
               ✅ <strong>Correct Answer:</strong> {' '}
-              {currentQuestion.type === 'multiple-choice' 
+              {currentQuestion.type === 'multiple_choice' 
                 ? (currentQuestion.correctAnswer !== undefined 
                     ? `${String.fromCharCode(65 + Number(currentQuestion.correctAnswer))}) ${currentQuestion.options?.[Number(currentQuestion.correctAnswer)] || ''}` 
                     : 'Not set')

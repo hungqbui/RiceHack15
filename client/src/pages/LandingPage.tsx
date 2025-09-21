@@ -6,7 +6,7 @@ import Clock from "../components/Clock.tsx";
 import OwlIcon from "/logo.png";
 import SideBarRight from "../components/SideBarRight.tsx";
 import { useAuth } from "../contexts/AuthContext";
-import { ChosenDocumentsProvider, useChosenDocuments } from "../contexts/ChosenDocumentsContext";
+import { useChosenDocuments } from "../contexts/ChosenDocumentsContext";
 import ragChat from "../utils/ragChat";
 import { marked } from 'marked';
 
@@ -329,11 +329,7 @@ const LandingPageContent = () => {
 };
 
 const LandingPage = () => {
-  return (
-    <ChosenDocumentsProvider>
-      <LandingPageContent />
-    </ChosenDocumentsProvider>
-  );
+  return <LandingPageContent />;
 };
 
 export default LandingPage;

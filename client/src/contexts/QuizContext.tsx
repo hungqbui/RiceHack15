@@ -24,7 +24,7 @@ const QuizContextProvider = ({ children }: { children: ReactNode }) => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [selectedQuestion, setSelectedQuestion] = useState<Question | null>(null);
   const [settings, setSettings] = useState<QuizSettings>({
-    selectedType: 'multiple-choice',
+    selectedType: 'multiple_choice',
     showAnswer: false,
     setTimer: false,
     timerDuration: 30

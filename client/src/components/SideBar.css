@@ -38,6 +38,7 @@ body {
     overflow-y: hidden;
     flex-shrink: 0;
     height: 100vh;
+    z-index: 999;
 }
 .sidebar-left {
     position: relative;

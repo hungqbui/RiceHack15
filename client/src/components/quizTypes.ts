@@ -1,7 +1,7 @@
 export interface Question {
     id: number;
     text: string;
-    type: 'multiple-choice' | 'blank-filling';
+    type: 'multiple_choice' | 'blank_filling';
     options?: string[];
     answer?: string;
     correctAnswer?: string | number; // For tracking correct answers
@@ -11,7 +11,7 @@ export interface Question {
     showAnswer: boolean;
     setTimer: boolean;
     timerDuration?: number; // in minutes
-    selectedType: 'multiple-choice' | 'blank-filling';
+    selectedType: 'multiple_choice' | 'blank_filling';
   }
   
   export interface QuizState {

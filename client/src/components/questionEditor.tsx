@@ -18,6 +18,10 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
   // Use prop function if provided, otherwise use context function
   const handleQuestionUpdate = propOnQuestionUpdate || contextOnQuestionUpdate;
 
+  // Store the original generated answer to show when it was AI-generated
+  const [originalCorrectAnswer] = React.useState(question.correctAnswer);
+  const [originalAnswer] = React.useState(question.answer);
+
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleQuestionUpdate({ ...question, text: e.target.value });
   };
@@ -55,7 +59,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
 
   // Helper function to get the answer preview
   const getAnswerPreview = () => {
-    if (question.type === 'multiple-choice') {
+    if (question.type === 'multiple_choice') {
       if (question.correctAnswer !== undefined) {
         // Convert to number if it's a string
         const answerIndex = typeof question.correctAnswer === 'string' 
@@ -87,7 +91,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
         />
       </div>
 
-      {question.type === 'multiple-choice' && (
+      {question.type === 'multiple_choice' && (
         <div>
           <div className="grid grid-cols-1 gap-2 mt-2">
             {question.options?.map((option, optionIndex) => (
@@ -130,6 +134,20 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Correct Answer:
             </label>
+            
+            {/* Show AI-generated answer prominently */}
+            {originalCorrectAnswer !== undefined && (
+              <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+                <span className="text-blue-800">
+                  🤖 <strong>AI Generated:</strong> {' '}
+                  {String.fromCharCode(65 + Number(originalCorrectAnswer))} - {question.options?.[Number(originalCorrectAnswer)] || 'Unknown option'}
+                  {question.correctAnswer !== originalCorrectAnswer && (
+                    <span className="text-orange-600 ml-2">(Modified from original)</span>
+                  )}
+                </span>
+              </div>
+            )}
+            
             <select
               value={question.correctAnswer || ''}
               onChange={handleCorrectAnswerChange}
@@ -139,6 +157,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
               {question.options?.map((option, index) => (
                 <option key={index} value={index}>
                   {String.fromCharCode(65 + index)}) {option || `Option ${String.fromCharCode(65 + index)}`}
+                  {index === originalCorrectAnswer && ' ⭐ (AI Generated)'}
                 </option>
               ))}
             </select>
@@ -146,11 +165,24 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
         </div>
       )}
 
-      {question.type === 'blank-filling' && (
+      {question.type === 'blank_filling' && (
         <div className="mt-2">
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Correct Answer:
           </label>
+          
+          {/* Show AI-generated answer prominently */}
+          {originalAnswer && (
+            <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
+              <span className="text-blue-800">
+                🤖 <strong>AI Generated:</strong> {originalAnswer}
+                {question.answer !== originalAnswer && (
+                  <span className="text-orange-600 ml-2">(Modified from original)</span>
+                )}
+              </span>
+            </div>
+          )}
+          
           <input
             type="text"
             value={question.answer || ''}

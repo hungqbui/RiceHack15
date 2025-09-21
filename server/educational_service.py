@@ -1178,6 +1178,8 @@ Since no specific educational materials are available in the knowledge base, ple
             Dictionary with generated quiz questions and answers
         """
         try:
+            logger.info(f"Quiz generation request - file_ids: {file_ids}, quiz_type: {quiz_type}, num_questions: {num_questions}, user_id: {user_id}")
+            
             if not self.chat_model:
                 return {
                     'quiz': [],
@@ -1191,6 +1193,7 @@ Since no specific educational materials are available in the knowledge base, ple
             
             if self.vector_store:
                 if file_ids:
+                    logger.info(f"Processing {len(file_ids)} specific file IDs for quiz generation: {file_ids}")
                     # Use specific files for quiz generation
                     context_result = self.get_files_summary(file_ids, user_id)
                     if context_result['status'] == 'success':
@@ -1199,7 +1202,7 @@ Since no specific educational materials are available in the knowledge base, ple
                         for file_id in file_ids:
                             file_result = self.get_documents_by_file_id(file_id, user_id=user_id)
                             if file_result['status'] == 'success':
-                                file_content = "\n".join([doc.get('content', '') for doc in file_result['documents']])
+                                file_content = "\n".join([doc.get('text', '') for doc in file_result['documents']])
                                 filename = file_result['documents'][0].get('metadata', {}).get('filename', 'Unknown') if file_result['documents'] else 'Unknown'
                                 all_content.append(f"From {filename}:\n{file_content}")
                                 sources.append({
@@ -1208,6 +1211,7 @@ Since no specific educational materials are available in the knowledge base, ple
                                     'document_count': len(file_result['documents'])
                                 })
                         context = "\n\n" + "="*50 + "\n\n".join(all_content)
+                        logger.info(f"Retrieved context from {len(file_ids)} files, total context length: {len(context)} characters")
                 else:
                     # Use a broad search to get representative content
                     search_terms = ["definition", "concept", "theory", "formula", "principle", "method"]
@@ -1234,7 +1238,7 @@ Since no specific educational materials are available in the knowledge base, ple
                                 logger.error(f"Quiz search fallback failed for term '{term}': {fallback_error}")
                                 docs = []
                         relevant_docs.extend(docs)
-                    
+                    print(all_docs)
                     # Remove duplicates and limit
                     seen_content = set()
                     unique_docs = []
@@ -1245,6 +1249,7 @@ Since no specific educational materials are available in the knowledge base, ple
                     
                     relevant_docs = unique_docs[:15]  # Limit to 15 documents
                     context = "\n\n".join([doc.page_content for doc in relevant_docs])
+                    logger.info(f"Using general search mode, retrieved {len(relevant_docs)} documents, context length: {len(context)} characters")
                     sources = [{
                         'content': doc.page_content[:100] + "...",
                         'source': doc.metadata.get('source', 'Unknown'),
@@ -1303,7 +1308,7 @@ Format your response as a JSON object with this structure:
 
 Course Material:
 {context}"""
-            
+            print(context)
             # Add custom prompt if provided
             if quiz_prompt:
                 base_prompt += f"\n\nAdditional Instructions: {quiz_prompt}"

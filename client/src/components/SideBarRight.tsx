@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./SideBar.css";
 import { useChosenDocuments } from "../contexts/ChosenDocumentsContext";
-import { useQuiz } from "../contexts/QuizContext";
 import ragChat from "../utils/ragChat";
 
 interface SideBarRightProps {
@@ -15,7 +14,6 @@ const SideBarRight = ({ onSummaryResponse }: SideBarRightProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const navigate = useNavigate();
     const { getChosenDocumentsArray } = useChosenDocuments();
-    const { setQuizData } = useQuiz();
 
     const handleSummarize = async () => {
         try {
@@ -40,14 +38,6 @@ const SideBarRight = ({ onSummaryResponse }: SideBarRightProps) => {
     const handleCreateQuiz = async () => {
         try {
             setIsLoading(true);
-            const chosenDocumentIds = getChosenDocumentsArray();
-            const quizPrompt = "Generate a quiz/exam based on the provided materials. Please create questions that test understanding of the key concepts.";
-            
-            const response = await ragChat(quizPrompt, chosenDocumentIds.length > 0 ? chosenDocumentIds : undefined);
-            
-            // Store the quiz data in context
-            setQuizData(response);
-            
             // Navigate to quiz page
             navigate('/quiz');
             
