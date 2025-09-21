@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import OwlIcon from "/logo.png";
 
 // Define CSS as a JavaScript string
 const styles = `
@@ -42,8 +43,8 @@ const styles = `
     }
 
     .owl-logo {
-        width: 6rem;
-        height: 6rem;
+        width: 7rem;
+        height: 7rem;
         color: #60a5fa;
         margin-bottom: 0.5rem;
     }
@@ -283,9 +284,7 @@ function LoginPage() {
             <style dangerouslySetInnerHTML={{ __html: styles }} />
             <div className="login-card">
                 <div className="logo-container">
-                    <svg className="owl-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-4-8c0 1.66 1.34 3 3 3s3-1.34 3-3V8c0-1.66-1.34-3-3-3s-3 1.34-3 3v4zm6 0c0 1.66 1.34 3 3 3s3-1.34 3-3V8c0-1.66-1.34-3-3-3s-3 1.34-3 3v4z"/>
-                    </svg>
+                    <img src={OwlIcon} className="owl-icon" alt="Owl Icon" style={{width: "30%" }} />
                     <h1 className="logo-text">Owl AI</h1>
                     <p className="logo-subtext">Your AI-powered assistant</p>
                 </div>
