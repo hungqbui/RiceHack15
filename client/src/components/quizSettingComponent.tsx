@@ -1,8 +1,10 @@
 // components/quiz/QuizSettings.js
 import React from 'react';
 // import './QuizSettings.css';
+import { useQuiz } from '../contexts/QuizContext';
 
-const QuizSettings = ({ settings, numQuestions, onSettingsChange }: any) => {
+const QuizSettings = () => {
+const { settings, numQuestions, onSettingsChange } = useQuiz();
   const handleTypeChange = (event:any) => {
     onSettingsChange({ selectedType: event.target.value });
   };
