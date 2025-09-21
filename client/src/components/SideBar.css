@@ -256,16 +256,14 @@ body.dark-mode .document-item:hover, body.dark-mode .folder-item:hover {
     list-style: none;
     padding-left: 20px;
 }
-
-/* Improved Sidebar Buttons */
+.my-folder-btn {
+    background-color: var(--primary-color);
+}
 .sidebar button.my-folder-btn {
     display: flex;
     flex-direction: row;
     align-items: flex-start;
     width: 100%;
-    text-align: left;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #60a5fa, #3b82f6);
     color: white;
     border: none;
     border-radius: 8px;
@@ -273,13 +271,7 @@ body.dark-mode .document-item:hover, body.dark-mode .folder-item:hover {
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 1rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    transition: transform 0.2s, box-shadow 0.2s, background 0.3s;
-}
-.sidebar button.my-folder-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-    background: linear-gradient(135deg, #3b82f6, #60a5fa);
+    
 }
 
 /* Right Sidebar Buttons */

@@ -1,58 +1,77 @@
-/* App.css */
-/* This file contains all the styles for the application, converted from the previous JS objects. */
+:root {
+    --background-color: #ffffff;
+    --surface-color: #f0f2f5;
+    --text-color: #1f2937;
+    --subtle-text-color: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+body.dark-mode {
+    --background-color: #111827;
+    --surface-color: #1f2937;
+    --primary-color: #60a5fa;
+    --text-color: #f9fafb;
+    --subtle-text-color: #9ca3af;
+    --border-color: #374151;
+
+}
+body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--background-color);
+    transition: background-color 0.3s, color 0.3s;
+    /* max-height: 80vh; */
+}
 
 .container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background-color: #f7f9fc;
+    justify-content: space-evenly;
+    background-color: white;
     font-family: 'Comic Sans MS', 'Chalkduster', 'cursive';
-    color: #4a5568;
-    overflow: hidden;
-  }
-  
-  .title {
+    min-height: 100vh; 
+}
+
+.title {
     font-size: 2.5rem;
     color: #2d3748;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
     text-align: center;
-  }
+}
   
-  .canvas {
+.canvas {
     position: relative;
-    width: 90vw;
-    max-width: 900px;
+    width: 100vw;
     height: 60vh;
-    max-height: 600px;
-    background-color: #ffffff;
-    border: 1px solid #e2e8f0;
+    /* background-color: #ffffff; */
+    /* border: 1px solid #e2e8f0;
     border-radius: 16px;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-  }
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05); */
+}
   
-  .figure-container {
+.figure-container {
     position: absolute;
-    top: 25%;
-    left: 5%;
+    bottom: 30%;
+    left: 10%;
     width: 150px;
     height: 150px;
-  }
+}
   
-  .owl-image {
-    width: 250%;
-    height: 250%;
+.owl-image {
+    width: 270%;
+    height: 260%;
     
-  }
+}
   
   
-  .chalkboard {
+.chalkboard {
     position: absolute;
-    top: 15%;
-    left: 30%;
-    width: 400px;
-    height: 250px;
+    bottom: 20%;
+    left: 25%;
+    width: 700px;
+    height: 350px;
     background-color: #004d40; /* Dark green chalkboard color */
     border: 15px solid #8B4513; /* Wooden frame */
     border-radius: 12px;
@@ -60,18 +79,18 @@
     color: #FFFFFF; /* White chalk color */
     text-align: left;
     box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
-  }
+}
   
-  .chat-container {
+.chat-container {
     position: absolute;
-    bottom: 15%;
-    right: 5%;
+    top: 85%;
+    right: 10%;
     display: flex;
     align-items: center;
     gap: 15px;
-  }
+}
   
-  .chat-message {
+.chat-message {
     position: relative; /* Needed for the speech bubble arrow */
     width: 280px;
     border: 2.5px solid #4299e1;
@@ -79,9 +98,9 @@
     padding: 1rem;
     color: #4299e1;
     background-color: #f0f9ff;
-  }
+}
   
-  .chat-bubble-arrow {
+.chat-bubble-arrow {
       position: absolute;
       top: 50%;
       right: -10px;
@@ -91,15 +110,15 @@
       border-top: 10px solid transparent;
       border-bottom: 10px solid transparent;
       border-left: 10px solid #4299e1;
-  }
+}
   
-  .mic {
+.mic {
     width: 80px;
     cursor: pointer;
     transition: transform 0.2s ease;
-  }
+}
   
-  .mic:hover {
+.mic:hover {
     transform: scale(1.1);
-  }
+}
   
