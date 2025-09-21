@@ -3,10 +3,10 @@ import { useQuiz } from '../contexts/QuizContext';
 
 const QuizSettings = () => {
   // Get all the needed values from the context
-  const { settings, numQuestions, onSettingsChange, questions, setQuestions } = useQuiz();
+  const { settings, numQuestions, onSettingsChange, questions, setQuestions, setNumQuestions } = useQuiz();
 
   const handleTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const newType = event.target.value as 'multiple-choice' | 'blank-filling';
+    const newType = event.target.value as 'multiple_choice' | 'blank_filling';
     onSettingsChange({ selectedType: newType });
     
     // Update existing questions to match the new type
@@ -14,8 +14,8 @@ const QuizSettings = () => {
       ...question,
       type: newType,
       // Reset options and answers when switching types
-      options: newType === 'multiple-choice' ? ['', '', '', ''] : undefined,
-      answer: newType === 'blank-filling' ? '' : undefined,
+      options: newType === 'multiple_choice' ? ['', '', '', ''] : undefined,
+      answer: newType === 'blank_filling' ? '' : undefined,
     }));
     setQuestions(updatedQuestions);
   };
@@ -43,8 +43,8 @@ const QuizSettings = () => {
             onChange={handleTypeChange}
             className="setting-select"
           >
-            <option value="multiple-choice">Multiple Choice</option>
-            <option value="blank-filling">Blank Filling</option>
+            <option value="multiple_choice">Multiple Choice</option>
+            <option value="blank_filling">Blank Filling</option>
           </select>
         </div>
         
@@ -53,8 +53,8 @@ const QuizSettings = () => {
           <input
             type="text"
             value={numQuestions}
-            readOnly
             className="question-count-input"
+            onChange={(e) => { setNumQuestions(parseInt(e.target.value) || 0); }}  
           />
         </div>
         

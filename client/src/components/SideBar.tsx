@@ -261,17 +261,19 @@ const SideBar = () => {
 </button>
             <aside className={`sidebar sidebar-left ${sidebarCollapsed ? 'collapsed' : ''}`}>
                 <div className="sidebar-section">
-                    <div className="folder-bar" style={{ display: 'flex', alignItems: 'center' }}>
-                        <h2 style={{ margin: 0, padding: 0 }}>
+                    <div className="folder-header">
+                        <h2 className="folder-title">
+                            <span className="folder-icon">📄</span>
                             {chosenFolder}
                         </h2>
                         {chosenFolder !== 'Documents' && (
                             <button 
-                                style={{ marginLeft: "auto" }}
+                                className="add-folder-btn upload-btn"
                                 onClick={() => setShowUploadModal(true)}
                                 title="Upload PDF to this folder"
                             >
-                                +
+                                <span className="plus-icon">+</span>
+                                <div className="btn-ripple"></div>
                             </button>
                         )}
                     </div>
@@ -296,13 +298,18 @@ const SideBar = () => {
                     </ul>
                 </div>
                 <div className="sidebar-section">
-                    <div className="my-folder-btn">
-                        <h2 style={{ margin: 0, padding: 0, display: "inline-block" }}>My Folders</h2>
+                    <div className="folder-header">
+                        <h2 className="folder-title">
+                            <span className="folder-icon">📁</span>
+                            My Folders
+                        </h2>
                         <button 
-                            style={{ marginLeft: "auto" }}
+                            className="add-folder-btn"
                             onClick={() => setShowCreateFolderModal(true)}
+                            title="Create new folder"
                         >
-                            +
+                            <span className="plus-icon">+</span>
+                            <div className="btn-ripple"></div>
                         </button>
                     </div>
                     <ul className="folder-list">

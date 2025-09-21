@@ -174,6 +174,64 @@ def chat():
     except Exception as e:
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
+@app.route('/api/audio-chat', methods=['POST'])
+@require_auth
+def audio_chat():
+    """Direct audio chat endpoint for educational tutoring"""
+    try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Extract audio data and metadata
+        audio_base64 = data.get('audio_data')
+        mime_type = data.get('mime_type', 'audio/wav')
+        file_ids = data.get('file_ids', [])
+        persisted_question = data.get('persisted_question')
+        user_id = request.current_user['user_id']
+        
+        print(data)
+
+        if not audio_base64:
+            return jsonify({'error': 'Audio data is required'}), 400
+        
+        # Validate file_ids if provided
+        if file_ids is not None and not isinstance(file_ids, list):
+            return jsonify({'error': 'file_ids must be an array'}), 400
+        
+        # Decode base64 audio data
+        try:
+            import base64
+            audio_bytes = base64.b64decode(audio_base64)
+            logger.info(f"Decoded audio data: {len(audio_bytes)} bytes, type: {mime_type}")
+        except Exception as decode_error:
+            logger.error(f"Audio decoding error: {decode_error}")
+            return jsonify({'error': 'Invalid audio data encoding'}), 400
+        
+        # Process audio with educational service
+        result = get_educational_service().educational_audio_chat(
+            audio_bytes, 
+            mime_type, 
+            file_ids, 
+            user_id,
+            persisted_question
+        )
+        
+        # Add additional context info
+        if file_ids:
+            result['selected_files'] = file_ids
+            result['files_used'] = len(file_ids)
+        
+        if persisted_question:
+            result['persisted_question_used'] = True
+            result['question_context'] = persisted_question.get('question', '')
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Audio chat error: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
 @app.route('/api/upload', methods=['POST'])
 @require_auth
 def upload_file():

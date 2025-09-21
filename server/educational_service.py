@@ -23,6 +23,14 @@ from langchain.prompts import PromptTemplate
 from pymongo import MongoClient
 import google.generativeai as genai
 
+# Text-to-Speech imports
+try:
+    from elevenlabs.client import ElevenLabs
+    from elevenlabs import Voice, VoiceSettings
+    ELEVENLABS_AVAILABLE = True
+except ImportError:
+    ELEVENLABS_AVAILABLE = False
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -35,8 +43,15 @@ class EducationalService:
         self.db_name = os.getenv('MONGODB_DB_NAME', 'educational_ai')
         self.collection_name = os.getenv('MONGODB_COLLECTION_NAME', 'documents')
         
+        # ElevenLabs configuration
+        self.elevenlabs_api_key = os.getenv('ELEVENLABS_API_KEY')
+        self.elevenlabs_voice_id = os.getenv('ELEVENLABS_VOICE_ID', 'Rachel')  # Default voice
+        
         if not self.api_key:
             logger.warning("Google API key not found. Some features may not work.")
+        
+        if not self.elevenlabs_api_key and ELEVENLABS_AVAILABLE:
+            logger.warning("ElevenLabs API key not found. Text-to-speech features will be disabled.")
         
         # Initialize components
         try:
@@ -116,6 +131,46 @@ Educational response:"""
             self.mongo_client = None
             self.vector_store = None
             self.collection = None
+    
+    def _text_to_speech(self, text: str) -> Optional[bytes]:
+        """
+        Convert text to speech using ElevenLabs API
+        
+        Args:
+            text: Text to convert to speech
+            
+        Returns:
+            Audio bytes or None if TTS fails
+        """
+        try:
+            if not ELEVENLABS_AVAILABLE:
+                logger.warning("ElevenLabs not available for text-to-speech")
+                return None
+            
+            if not self.elevenlabs_api_key:
+                logger.warning("ElevenLabs API key not configured")
+                return None
+            
+            # Initialize ElevenLabs client
+            client = ElevenLabs(api_key=self.elevenlabs_api_key)
+            
+            # Generate audio using ElevenLabs - this returns a generator
+            audio_generator = client.text_to_speech.convert(
+                text=text,
+                voice_id="JBFqnCBsd6RMkjVDRZzb",
+                model_id="eleven_turbo_v2_5",
+                output_format="mp3_44100_128",
+            )
+            
+            # Convert generator to bytes
+            audio_bytes = b"".join(audio_generator)
+            
+            logger.info(f"Successfully generated speech for text length: {len(text)}")
+            return audio_bytes
+            
+        except Exception as e:
+            logger.error(f"Text-to-speech generation failed: {str(e)}")
+            return None
     
     def _clean_extracted_text(self, text: str) -> str:
         """Clean and normalize extracted text from PDFs to fix spacing issues"""
@@ -790,7 +845,7 @@ Educational response:"""
                 'status': 'error'
             }
     
-    def educational_audio_chat(self, audio_data: bytes, mime_type: str, file_ids: list = None, user_id: str = None) -> Dict:
+    def educational_audio_chat(self, audio_data: bytes, mime_type: str, file_ids: list = None, user_id: str = None, persisted_question: dict = None) -> Dict:
         """
         Answer educational questions using direct audio input to Gemini with RAG context
         
@@ -823,10 +878,10 @@ Educational response:"""
                     "mime_type": mime_type,
                     "data": audio_data
                 }
-                
+                print(persisted_question)
                 # Step 1: First transcribe the audio to get the question text for RAG
                 transcription_prompt = """Please transcribe this audio and extract the main question or topic being asked. 
-Respond with just the transcribed text, focusing on the key question or learning objective."""
+Respond with just the transcribed text, focusing on the key question or learning objective. Make it concise and clear. Don't over explain let the user think about it. Focus ONLY on the persisted question. For latex board reponse, wrap them between $$."""
                 
                 transcription_response = model.generate_content([
                     transcription_prompt,
@@ -889,24 +944,56 @@ Respond with just the transcribed text, focusing on the key question or learning
                     except Exception as e:
                         logger.warning(f"Could not retrieve context from knowledge base: {str(e)}")
                 
-                # Step 3: Create comprehensive prompt with context
+                # Step 3: Create comprehensive prompt with context for structured response
+                persisted_context = ""
+                if persisted_question:
+                    persisted_context = f"""
+PERSISTED QUESTION CONTEXT:
+The student has been working on: "{persisted_question.get('question', '')}"
+Subject: {persisted_question.get('subject', 'General')}
+Difficulty: {persisted_question.get('difficulty', 'Unknown')}
+Please consider this ongoing context when providing your response.
+"""
+
                 if context:
-                    context_prompt = f"""You are an educational AI assistant. The student has asked a question via audio. Use the following context from uploaded educational materials to answer their question.
+                    context_prompt = f"""You are an educational AI tutor assistant. The student has asked a question via audio. Use the following context from uploaded educational materials to provide a comprehensive tutoring response.
 
-Be helpful, clear, and educational in your response. Reference the specific materials when relevant.
-
+IMPORTANT: Respond in the following JSON format:
+{{
+  "tutoring_response": "Your detailed educational explanation here",
+  "board_writing": "Make sure to wrap equations between $$ for proper rendering. Key concepts, formulas, or diagrams in LaTeX format (e.g., $E=mc^2$, $\\frac{{x^2}}{{y}}$, use $\textbf{{bold}}$ instead of **bold**, etc.). Make it concise, include only very important detail (less than 15 words/mathematical symbols)",
+  "understanding_level": "beginner|intermediate|advanced",
+  "progress_score": 0-100
+}}
+{persisted_context}
 Context from educational materials:
 {context}
 
 Transcribed question: {transcribed_question}
 
-Please provide a comprehensive educational response that addresses the audio question using the available context:"""
+Provide a comprehensive educational response with:
+1. Clear explanation addressing the question
+2. LaTeX formulas/concepts for the chalkboard
+3. Assessment of understanding level based on question complexity
+4. Progress score (0-100) based on question difficulty and depth"""
                 else:
-                    context_prompt = f"""You are an educational AI assistant. The student has asked a question via audio.
+                    context_prompt = f"""You are an educational AI tutor assistant. The student has asked a question via audio.
 
+IMPORTANT: Respond in the following JSON format:
+{{
+  "tutoring_response": "Your detailed educational explanation here",
+  "board_writing": "Key concepts, formulas, or diagrams in LaTeX format (e.g., E=mc^2, \\frac{{x^2}}{{y}}, etc.)",
+  "understanding_level": "beginner|intermediate|advanced", 
+  "progress_score": 0-100
+}}
+{persisted_context}
 Transcribed question: {transcribed_question}
 
-Since no specific educational materials are available in the knowledge base, please provide a helpful educational response based on your general knowledge:"""
+Since no specific educational materials are available, provide a helpful educational response with:
+1. Clear explanation based on general knowledge
+2. LaTeX formulas/concepts for the chalkboard
+3. Assessment of understanding level based on question complexity
+4. Progress score (0-100) based on question difficulty and depth"""
                 
                 # Step 4: Generate final response with both audio and context
                 final_response = model.generate_content([
@@ -914,6 +1001,37 @@ Since no specific educational materials are available in the knowledge base, ple
                     "Here is the original audio question for additional context:",
                     audio_part
                 ])
+                
+                # Parse the structured JSON response
+                try:
+                    import json
+                    response_text = final_response.text.strip()
+                    
+                    # Extract JSON from response (handle code block formatting)
+                    if "```json" in response_text:
+                        json_start = response_text.find("```json") + 7
+                        json_end = response_text.find("```", json_start)
+                        json_text = response_text[json_start:json_end].strip()
+                    elif "{" in response_text and "}" in response_text:
+                        json_start = response_text.find("{")
+                        json_end = response_text.rfind("}") + 1
+                        json_text = response_text[json_start:json_end]
+                    else:
+                        json_text = response_text
+                    
+                    parsed_response = json.loads(json_text)
+                    
+                    tutoring_text = parsed_response.get('tutoring_response', response_text)
+                    board_content = parsed_response.get('board_writing', '')
+                    understanding_level = parsed_response.get('understanding_level', 'intermediate')
+                    progress_score = parsed_response.get('progress_score', 70)
+                    
+                except (json.JSONDecodeError, KeyError) as e:
+                    logger.warning(f"Failed to parse structured response: {e}, using fallback")
+                    tutoring_text = final_response.text
+                    board_content = ""
+                    understanding_level = "intermediate"
+                    progress_score = 70
                 
                 # Add audio processing indicator to sources
                 audio_source = {
@@ -923,27 +1041,35 @@ Since no specific educational materials are available in the knowledge base, ple
                 }
                 sources.insert(0, audio_source)
                 
-                print({
-                    'answer': final_response.text,
+                # Step 5: Generate speech from the AI response (tutoring text only)
+                speech_audio = self._text_to_speech(tutoring_text)
+                
+                # Prepare response data
+                response_data = {
+                    'answer': tutoring_text,
+                    'board_content': board_content,
+                    'understanding_level': understanding_level,
+                    'progress': progress_score,
                     'sources': sources,
                     'status': 'success',
                     'audio_processed': True,
                     'transcribed_question': transcribed_question,
                     'context_used': len(context) > 0,
                     'selected_files': file_ids or [],
-                    'relevant_documents': len(sources) - 1  # Subtract 1 for audio source
-                })
-
-                return {
-                    'answer': final_response.text,
-                    'sources': sources,
-                    'status': 'success',
-                    'audio_processed': True,
-                    'transcribed_question': transcribed_question,
-                    'context_used': len(context) > 0,
-                    'selected_files': file_ids or [],
-                    'relevant_documents': len(sources) - 1  # Subtract 1 for audio source
+                    'relevant_documents': len(sources) - 1,  # Subtract 1 for audio source
+                    'has_speech': speech_audio is not None
                 }
+                
+                # Add speech audio if generated successfully
+                if speech_audio:
+                    import base64
+                    response_data['speech_audio'] = base64.b64encode(speech_audio).decode('utf-8')
+                    response_data['speech_mime_type'] = 'audio/mpeg'
+                    logger.info("Speech audio generated successfully")
+                else:
+                    logger.warning("Speech generation failed, returning text-only response")
+
+                return response_data
                 
             except ImportError as ie:
                 logger.error(f"Google GenAI library not available for direct audio: {str(ie)}")

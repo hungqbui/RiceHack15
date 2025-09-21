@@ -42,3 +42,6 @@ python-socketio[client]==5.9.0
 # Authentication and Security
 PyJWT==2.8.0
 bcrypt==4.0.1
+
+# Text-to-Speech (ElevenLabs)
+elevenlabs==1.2.2

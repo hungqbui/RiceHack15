@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Question } from '../components/quizTypes';
 import { useQuiz } from '../contexts/QuizContext';
+import './questionEditor.css';
 
 interface QuestionEditorProps {
   question: Question;
@@ -122,27 +123,40 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
       </div>
 
       {question.type === 'multiple_choice' && (
-        <div>
-          <div className="grid grid-cols-1 gap-2 mt-2">
+        <div className="multiple-choice-section">
+          <div className="options-header">
+            <h4 className="options-title">
+              <span className="options-icon">📝</span>
+              Multiple Choice Options
+            </h4>
+            <div className="options-count">
+              {question.options?.length || 0} / 6 options
+            </div>
+          </div>
+          
+          <div className="options-grid">
             {question.options?.map((option, optionIndex) => (
-              <div key={optionIndex} className="flex items-center space-x-2">
-                <span className="font-semibold text-gray-700 w-6">
-                  {String.fromCharCode(65 + optionIndex)}
-                </span>
-                <input
-                  type="text"
-                  value={option}
-                  onChange={(e) => handleOptionChange(e, optionIndex)}
-                  placeholder={`Option ${String.fromCharCode(65 + optionIndex)}`}
-                  className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
-                />
+              <div key={optionIndex} className="option-item" style={{ width: '100%' }}>
+            
+                <div className="option-input-container">
+                  <input
+                    type="text"
+                    value={option}
+                    onChange={(e) => handleOptionChange(e, optionIndex)}
+                    placeholder={`Enter option ${String.fromCharCode(65 + optionIndex)}`}
+                    className="option-input"
+                    style={{ width: '100%' }}
+                  />
+                  <div className="option-input-underline"></div>
+                </div>
                 {question.options && question.options.length > 2 && (
                   <button
                     type="button"
                     onClick={() => removeOption(optionIndex)}
-                    className="px-2 py-1 text-red-600 hover:text-red-800 text-sm"
+                    className="remove-option-btn"
+                    title="Remove this option"
                   >
-                    Remove
+                    <span className="remove-icon">×</span>
                   </button>
                 )}
               </div>
@@ -150,13 +164,17 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
           </div>
           
           {question.options && question.options.length < 6 && (
-            <button
-              type="button"
-              onClick={addOption}
-              className="mt-2 px-3 py-1 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
-            >
-              Add Option
-            </button>
+            <div className="add-option-container">
+              <button
+                type="button"
+                onClick={addOption}
+                className="add-option-btn"
+              >
+                <span className="add-icon">+</span>
+                <span className="add-text">Add New Option</span>
+                <div className="btn-glow"></div>
+              </button>
+            </div>
           )}
 
           {/* Correct Answer Selection for Multiple Choice */}
@@ -170,7 +188,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
               <div className="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm">
                 <span className="text-blue-800">
                   🤖 <strong>AI Generated:</strong> {' '}
-                  {String.fromCharCode(65 + Number(originalCorrectAnswer))} - {question.options?.[Number(originalCorrectAnswer)] || 'Unknown option'}
+                  {question.options?.[Number(originalCorrectAnswer)] || 'Unknown option'}
                   {question.correctAnswer !== originalCorrectAnswer && (
                     <span className="text-orange-600 ml-2">(Modified from original)</span>
                   )}
@@ -186,7 +204,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
               <option value="">Select correct answer</option>
               {question.options?.map((option, index) => (
                 <option key={index} value={index}>
-                  {String.fromCharCode(65 + index)}) {option || `Option ${String.fromCharCode(65 + index)}`}
+                  ({String.fromCharCode(65 + index)}) {option || `Option ${String.fromCharCode(65 + index)}`}
                   {index === originalCorrectAnswer && ' ⭐ (AI Generated)'}
                 </option>
               ))}
