@@ -1,0 +1,313 @@
+:root {
+    --background-color: #ffffff;
+    --surface-color: #f0f2f5;
+    --text-color: #1f2937;
+    --subtle-text-color: #6b7280;
+    --border-color: #e5e7eb;
+    --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
+}
+body.dark-mode {
+    --background-color: #111827;
+    --surface-color: #1f2937;
+    --primary-color: #60a5fa;
+    --text-color: #f9fafb;
+    --subtle-text-color: #9ca3af;
+    --border-color: #374151;
+}
+/* Sets a clean, sans-serif font and a light gray background for the entire page. */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+  }
+  
+  /* Flexbox container to ensure the app fills the viewport height. */
+  .app-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* ============================================
+     NAVIGATION
+     ============================================ */
+  
+  /* Styles the top navigation bar with a white background and a subtle shadow. */
+  .top-nav {
+    background-color: var(--primary-color); 
+    border-bottom: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  }
+  
+  /* Centers the navigation content and adds padding. */
+  .nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  /* Styles the main title of the application. */
+  .nav-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    color: #212529;
+  }
+  
+  /* A container for the navigation buttons/tabs. */
+  .nav-tabs {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  /* Styles the individual navigation tabs. */
+  .nav-tab {
+    background: none;
+    border: none;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+    font-weight: 500;
+    color: #6c757d;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border-bottom: 2px solid transparent;
+  }
+  
+  /* Changes the color on hover for a subtle effect. */
+  .nav-tab:hover {
+    color: #495057;
+  }
+  
+  /* Highlights the currently active tab with a blue color and a bottom border. */
+  .nav-tab.active {
+    color: #007bff;
+    border-bottom-color: #007bff;
+  }
+  
+  /* ============================================
+     MAIN CONTENT
+     ============================================ */
+  
+  /* Main content area, centered and with padding. */
+  .main-content-area {
+    flex-grow: 1;
+    max-width: 1200px;
+    margin: 1.5rem auto;
+    padding: 0 1.5rem;
+    width: 100%;
+  }
+  
+  /* ============================================
+     EDITOR LAYOUT
+     ============================================ */
+  
+  /* Flexbox layout for the main editor sections. */
+  .editor-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  /* Styles a card-like container for each major section. */
+  .section-card {
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+  }
+  
+  /* Header within the cards for titles and action buttons. */
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  
+  /* Styles for titles within the cards and panels. */
+  .card-title, .panel-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+  }
+  
+  /* Grid layout for the question list and editor panels. */
+  .content-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  /* Adjusts the grid to have two columns on larger screens. */
+  @media (min-width: 992px) {
+    .content-grid {
+      grid-template-columns: 1fr 2fr;
+    }
+  }
+  
+  /* ============================================
+     BUTTONS
+     ============================================ */
+  
+  /* Base styles for all buttons. */
+  .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Primary button style with a blue background. */
+  .btn-primary {
+    background-color: #007bff;
+    color: #fff;
+  }
+  
+  .btn-primary:hover {
+    background-color: #0056b3;
+  }
+  
+  /* Secondary button style with a light gray background. */
+  .btn-secondary {
+    background-color: #e9ecef;
+    color: #495057;
+  }
+  
+  .btn-secondary:hover {
+    background-color: #ced4da;
+  }
+  
+  /* ============================================
+     QUESTION LIST & EDITOR PANELS
+     ============================================ */
+  
+  /* Styles for the panels containing the question list and editor. */
+  .question-list-panel, .editor-panel {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e9ecef;
+  }
+  
+  /* Flexbox layout for the list of questions. */
+  .question-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-top: 0.5rem;
+  }
+  
+  /* Styles for an individual question item in the list. */
+  .question-item {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    padding: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .question-item:hover {
+    border-color: #007bff;
+    box-shadow: 0 2px 5px rgba(0, 123, 255, 0.1);
+  }
+  
+  /* Highlights the selected question item. */
+  .question-item.selected {
+    border-color: #007bff;
+    background-color: #eaf5ff;
+  }
+  
+  /* Styles the question number and preview text. */
+  .question-number {
+    font-weight: 600;
+    color: #495057;
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .question-preview {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 0;
+  }
+  
+  /* Container for the question tags. */
+  .meta-tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+  }
+  
+  /* Base style for question tags. */
+  .tag {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 12px;
+    background-color: #e9ecef;
+    color: #495057;
+  }
+  
+  /* Style for the "complete" tag. */
+  .tag.complete {
+    background-color: #d4edda;
+    color: #155724;
+  }
+  
+  /* ============================================
+     PLACEHOLDERS
+     ============================================ */
+  
+  /* Styles for empty state messages and placeholders. */
+  .empty-state, .editor-placeholder {
+    text-align: center;
+    padding: 2rem;
+    color: #6c757d;
+  }
+  
+  .empty-icon, .placeholder-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+  
+  .empty-title {
+    font-size: 1.25rem;
+    margin: 0;
+    font-weight: 500;
+  }
+  
+  .empty-text, .placeholder-text {
+    margin: 0;
+    color: #adb5bd;
+  }
+  
+  /* ============================================
+     FORM ELEMENTS
+     ============================================ */
+  
+  /* Styles for text inputs, select dropdowns, and text areas. */
+  input[type="text"], select, textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+    transition: border-color 0.2s;
+  }
+  
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: #007bff;
+  }

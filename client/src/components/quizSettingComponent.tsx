@@ -1,20 +1,36 @@
-// components/quiz/QuizSettings.js
 import React from 'react';
-// import './QuizSettings.css';
 import { useQuiz } from '../contexts/QuizContext';
 
 const QuizSettings = () => {
-const { settings, numQuestions, onSettingsChange } = useQuiz();
-  const handleTypeChange = (event:any) => {
-    onSettingsChange({ selectedType: event.target.value });
+  // Get all the needed values from the context
+  const { settings, numQuestions, onSettingsChange, questions, setQuestions } = useQuiz();
+
+  const handleTypeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newType = event.target.value as 'multiple-choice' | 'blank-filling';
+    onSettingsChange({ selectedType: newType });
+    
+    // Update existing questions to match the new type
+    const updatedQuestions = questions.map(question => ({
+      ...question,
+      type: newType,
+      // Reset options and answers when switching types
+      options: newType === 'multiple-choice' ? ['', '', '', ''] : undefined,
+      answer: newType === 'blank-filling' ? '' : undefined,
+    }));
+    setQuestions(updatedQuestions);
   };
 
-  const handleShowAnswerChange = (event:any) => {
+  const handleShowAnswerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSettingsChange({ showAnswer: event.target.checked });
   };
 
-  const handleTimerChange = (event:any) => {
+  const handleTimerChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     onSettingsChange({ setTimer: event.target.checked });
+  };
+
+  const handleTimerDurationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const duration = parseInt(event.target.value) || 30;
+    onSettingsChange({ timerDuration: duration });
   };
 
   return (
@@ -68,6 +84,20 @@ const { settings, numQuestions, onSettingsChange } = useQuiz();
               Set timer
             </label>
           </div>
+          
+          {settings.setTimer && (
+            <div className="timer-duration">
+              <label className="setting-label">Timer (minutes):</label>
+              <input
+                type="number"
+                value={settings.timerDuration || 30}
+                onChange={handleTimerDurationChange}
+                min="1"
+                max="180"
+                className="timer-input"
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
