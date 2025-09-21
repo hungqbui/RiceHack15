@@ -19,7 +19,7 @@ export default function Convo() {
 
   return (
     <div className="container">
-      <h1 className="title">Quick lesson with Oulai!</h1>
+      <h1 className='title'>Quick lesson with Owlai!</h1>
       <div className="canvas">
         
         <OwlTeacher />
