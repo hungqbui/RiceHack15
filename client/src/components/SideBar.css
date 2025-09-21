@@ -80,11 +80,11 @@ body {
 /* Header Controls */
 .header-controls {
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
     margin-bottom: 20px;
-    flex-shrink: 0;
 }
+
 .clock, .dark-mode-toggle {
     background-color: var(--surface-color);
     padding: 8px 16px;
@@ -95,7 +95,12 @@ body {
     align-items: center;
     gap: 8px;
 }
-    .dark-mode-toggle {
+
+.clock-margin {
+  margin-right: 10px;
+}
+
+.dark-mode-toggle {
     cursor: pointer;
 }
 .toggle-switch {
