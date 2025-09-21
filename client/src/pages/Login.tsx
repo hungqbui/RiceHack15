@@ -110,12 +110,15 @@ const styles = `
     .form-field-input {
         margin-top: 0.25rem;
         display: block;
-        width: 100%;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem;
+        justify-content: center;
         border: 1px solid #d1d5db;
         border-radius: 0.5rem;
         box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
         transition: border-color 0.2s, box-shadow 0.2s;
+        width: 300px;
+        max-width: 20rem; 
+        margin: 0 auto; 
     }
 
     .form-field-input:focus {
