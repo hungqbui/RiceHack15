@@ -405,6 +405,23 @@ def upload_multiple_files():
         logger.error(f"Error processing multiple file upload: {str(e)}")
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
+@app.route('/api/createFolder', methods=['POST'])
+@require_auth
+def create_folder():
+    data = request.get_json()
+    folder_name = data.get('folder_name')
+
+    if not folder_name:
+        return jsonify({'error': 'Folder name is required'}), 400
+
+    user_id = request.current_user['user_id']
+    result = get_educational_service().create_folder(folder_name, user_id=user_id)
+
+    if result['status'] == 'success':
+        return jsonify({'message': 'Folder created successfully', 'folder_id': result['folder_id']}), 201
+    else:
+        return jsonify({'error': result.get('message', 'Failed to create folder'), 'status': 'error'}), 500
+
 @app.route('/api/files', methods=['GET'])
 @require_auth
 def list_files():

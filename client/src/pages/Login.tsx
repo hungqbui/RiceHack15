@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 // Define CSS as a JavaScript string
 const styles = `
@@ -149,6 +151,18 @@ const styles = `
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
+    .primary-btn:disabled {
+        background-color: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .primary-btn:disabled:hover {
+        background-color: #9ca3af;
+        transform: none;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
     .secondary-btn {
         width: 100%;
         display: flex;
@@ -171,6 +185,19 @@ const styles = `
         box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
 
+    .secondary-btn:disabled {
+        background-color: #f3f4f6;
+        color: #9ca3af;
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .secondary-btn:disabled:hover {
+        background-color: #f3f4f6;
+        transform: none;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    }
+
     .signup-btn {
         background-color: #10b981;
     }
@@ -180,37 +207,74 @@ const styles = `
     }
 `;
 
-function App() {
+function LoginPage() {
     const [isLogin, setIsLogin] = useState(true);
     const [message, setMessage] = useState({ text: '', type: '' });
     const [signupMessage, setSignupMessage] = useState({ text: '', type: '' });
+    const [isLoading, setIsLoading] = useState(false);
+    
+    const { login, register, isAuthenticated } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const handleLoginSubmit = (event) => {
+    // Redirect if already authenticated
+    useEffect(() => {
+        if (isAuthenticated) {
+            const from = location.state?.from?.pathname || '/';
+            navigate(from, { replace: true });
+        }
+    }, [isAuthenticated, navigate, location]);
+
+    const handleLoginSubmit = async (event: any) => {
         event.preventDefault();
-        const username = event.target.username.value;
+        setIsLoading(true);
+        setMessage({ text: '', type: '' });
+        
+        const email = event.target.email.value;
         const password = event.target.password.value;
 
-        if (username === 'user' && password === 'password') {
-            setMessage({ text: 'Login successful!', type: 'success' });
-        } else {
-            setMessage({ text: 'Invalid username or password.', type: 'error' });
+        try {
+            const success = await login(email, password);
+            if (success) {
+                setMessage({ text: 'Login successful!', type: 'success' });
+                // Navigation will be handled by useEffect
+            } else {
+                setMessage({ text: 'Invalid email or password.', type: 'error' });
+            }
+        } catch (error) {
+            setMessage({ text: 'An error occurred during login.', type: 'error' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
-    const handleSignupSubmit = (event) => {
+    const handleSignupSubmit = async (event: any) => {
         event.preventDefault();
-        const newUsername = event.target.newUsername.value;
+        setIsLoading(true);
+        setSignupMessage({ text: '', type: '' });
+        
+        const username = event.target.newUsername.value;
         const email = event.target.email.value;
-        const newPassword = event.target.newPassword.value;
+        const password = event.target.newPassword.value;
 
-        if (newUsername && email && newPassword) {
-            setSignupMessage({ text: 'Sign up successful! Please log in.', type: 'success' });
-            setTimeout(() => {
-                setIsLogin(true);
-                setSignupMessage({ text: '', type: '' });
-            }, 2000);
-        } else {
+        if (!username || !email || !password) {
             setSignupMessage({ text: 'All fields are required to sign up.', type: 'error' });
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const success = await register(username, email, password);
+            if (success) {
+                setSignupMessage({ text: 'Sign up successful! Redirecting...', type: 'success' });
+                // Navigation will be handled by useEffect
+            } else {
+                setSignupMessage({ text: 'Sign up failed. Email may already be in use.', type: 'error' });
+            }
+        } catch (error) {
+            setSignupMessage({ text: 'An error occurred during sign up.', type: 'error' });
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -235,18 +299,22 @@ function App() {
                             </div>
                             <form id="loginForm" className="form-content" onSubmit={handleLoginSubmit}>
                                 <div>
-                                    <label htmlFor="username" className="form-field-label">Username</label>
-                                    <input type="text" id="username" name="username" className="form-field-input" />
+                                    <label htmlFor="email" className="form-field-label">Email</label>
+                                    <input type="email" id="email" name="email" className="form-field-input" required />
                                 </div>
                                 <div>
                                     <label htmlFor="password" className="form-field-label">Password</label>
-                                    <input type="password" id="password" name="password" className="form-field-input" />
+                                    <input type="password" id="password" name="password" className="form-field-input" required />
                                 </div>
                                 <div className={`message-box ${message.type === 'success' ? 'message-success' : 'message-error'}`}>
                                     {message.text}
                                 </div>
-                                <button type="submit" className="primary-btn">Log In</button>
-                                <button type="button" onClick={() => setIsLogin(false)} className="secondary-btn">Don't have an account? Sign Up</button>
+                                <button type="submit" className="primary-btn" disabled={isLoading}>
+                                    {isLoading ? 'Logging in...' : 'Log In'}
+                                </button>
+                                <button type="button" onClick={() => setIsLogin(false)} className="secondary-btn" disabled={isLoading}>
+                                    Don't have an account? Sign Up
+                                </button>
                             </form>
                         </div>
                     ) : (
@@ -258,21 +326,25 @@ function App() {
                             <form id="signupForm" className="form-content" onSubmit={handleSignupSubmit}>
                                 <div>
                                     <label htmlFor="newUsername" className="form-field-label">Username</label>
-                                    <input type="text" id="newUsername" name="newUsername" className="form-field-input" />
+                                    <input type="text" id="newUsername" name="newUsername" className="form-field-input" required />
                                 </div>
                                 <div>
                                     <label htmlFor="email" className="form-field-label">Email Address</label>
-                                    <input type="email" id="email" name="email" className="form-field-input" />
+                                    <input type="email" id="email" name="email" className="form-field-input" required />
                                 </div>
                                 <div>
                                     <label htmlFor="newPassword" className="form-field-label">Password</label>
-                                    <input type="password" id="newPassword" name="newPassword" className="form-field-input" />
+                                    <input type="password" id="newPassword" name="newPassword" className="form-field-input" required />
                                 </div>
                                 <div className={`message-box ${signupMessage.type === 'success' ? 'message-success' : 'message-error'}`}>
                                     {signupMessage.text}
                                 </div>
-                                <button type="submit" className="primary-btn signup-btn">Sign Up</button>
-                                <button type="button" onClick={() => setIsLogin(true)} className="secondary-btn">Back to Log In</button>
+                                <button type="submit" className="primary-btn signup-btn" disabled={isLoading}>
+                                    {isLoading ? 'Signing up...' : 'Sign Up'}
+                                </button>
+                                <button type="button" onClick={() => setIsLogin(true)} className="secondary-btn" disabled={isLoading}>
+                                    Back to Log In
+                                </button>
                             </form>
                         </div>
                     )}
@@ -282,4 +354,4 @@ function App() {
     );
 }
 
-export default App;
+export default LoginPage;
