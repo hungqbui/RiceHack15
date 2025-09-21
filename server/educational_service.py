@@ -597,12 +597,36 @@ Educational response:"""
             search_filter = {'file_id': file_id}
             if user_id:
                 search_filter['user_id'] = user_id
-                
-            relevant_docs = self.vector_store.similarity_search(
-                question,
-                k=max_chunks * 2,  # Get more docs to filter by file_id
-                filter=search_filter  # Filter by specific file and user
-            )
+            
+            try:
+                # Try with filter first
+                relevant_docs = self.vector_store.similarity_search(
+                    question,
+                    k=max_chunks * 2,  # Get more docs to filter by file_id
+                    filter=search_filter  # Filter by specific file and user
+                )
+            except Exception as filter_error:
+                logger.warning(f"Filter search failed: {filter_error}, trying without filter")
+                # Fallback: search without filter and manually filter results
+                try:
+                    all_docs = self.vector_store.similarity_search(question, k=max_chunks * 10)
+                    # Manually filter by file_id and user_id
+                    relevant_docs = []
+                    for doc in all_docs:
+                        doc_metadata = doc.metadata
+                        if doc_metadata.get('file_id') == file_id:
+                            if not user_id or doc_metadata.get('user_id') == user_id:
+                                relevant_docs.append(doc)
+                                if len(relevant_docs) >= max_chunks * 2:
+                                    break
+                except Exception as fallback_error:
+                    logger.error(f"Both filter and fallback search failed: {fallback_error}")
+                    return {
+                        'status': 'error',
+                        'message': f'Search failed: {fallback_error}',
+                        'context': '',
+                        'file_id': file_id
+                    }
             
             # Take only the requested number of chunks
             relevant_docs = relevant_docs[:max_chunks]
@@ -695,10 +719,24 @@ Educational response:"""
                 if user_id:
                     search_filter['user_id'] = user_id
                 
-                if search_filter:
-                    relevant_docs = self.vector_store.similarity_search(question, k=10, filter=search_filter)
-                else:
-                    relevant_docs = self.vector_store.similarity_search(question, k=10)
+                try:
+                    if search_filter:
+                        relevant_docs = self.vector_store.similarity_search(question, k=10, filter=search_filter)
+                    else:
+                        relevant_docs = self.vector_store.similarity_search(question, k=10)
+                except Exception as search_error:
+                    logger.warning(f"Vector search failed: {search_error}, trying without filter")
+                    # Fallback without filter
+                    try:
+                        all_docs = self.vector_store.similarity_search(question, k=50)
+                        if user_id:
+                            # Manually filter by user_id
+                            relevant_docs = [doc for doc in all_docs if doc.metadata.get('user_id') == user_id][:10]
+                        else:
+                            relevant_docs = all_docs[:10]
+                    except Exception as fallback_error:
+                        logger.error(f"All search methods failed: {fallback_error}")
+                        relevant_docs = []
             
             # if not relevant_docs:
             #     return {
@@ -823,10 +861,22 @@ Respond with just the transcribed text, focusing on the key question or learning
                             if user_id:
                                 search_filter['user_id'] = user_id
                             
-                            if search_filter:
-                                relevant_docs = self.vector_store.similarity_search(transcribed_question, k=8, filter=search_filter)
-                            else:
-                                relevant_docs = self.vector_store.similarity_search(transcribed_question, k=8)
+                            try:
+                                if search_filter:
+                                    relevant_docs = self.vector_store.similarity_search(transcribed_question, k=8, filter=search_filter)
+                                else:
+                                    relevant_docs = self.vector_store.similarity_search(transcribed_question, k=8)
+                            except Exception as search_error:
+                                logger.warning(f"Audio vector search failed: {search_error}, trying without filter")
+                                try:
+                                    all_docs = self.vector_store.similarity_search(transcribed_question, k=24)
+                                    if user_id:
+                                        relevant_docs = [doc for doc in all_docs if doc.metadata.get('user_id') == user_id][:8]
+                                    else:
+                                        relevant_docs = all_docs[:8]
+                                except Exception as fallback_error:
+                                    logger.error(f"Audio search fallback failed: {fallback_error}")
+                                    relevant_docs = []
                             if relevant_docs:
                                 context = "\n\n".join([doc.page_content for doc in relevant_docs])
                                 sources = [{
@@ -1167,10 +1217,22 @@ Since no specific educational materials are available in the knowledge base, ple
                         search_filter['user_id'] = user_id
                         
                     for term in search_terms:
-                        if search_filter:
-                            docs = self.vector_store.similarity_search(term, k=3, filter=search_filter)
-                        else:
-                            docs = self.vector_store.similarity_search(term, k=3)
+                        try:
+                            if search_filter:
+                                docs = self.vector_store.similarity_search(term, k=3, filter=search_filter)
+                            else:
+                                docs = self.vector_store.similarity_search(term, k=3)
+                        except Exception as search_error:
+                            logger.warning(f"Quiz search failed for term '{term}': {search_error}, trying without filter")
+                            try:
+                                all_docs = self.vector_store.similarity_search(term, k=9)
+                                if user_id:
+                                    docs = [doc for doc in all_docs if doc.metadata.get('user_id') == user_id][:3]
+                                else:
+                                    docs = all_docs[:3]
+                            except Exception as fallback_error:
+                                logger.error(f"Quiz search fallback failed for term '{term}': {fallback_error}")
+                                docs = []
                         relevant_docs.extend(docs)
                     
                     # Remove duplicates and limit
@@ -1462,6 +1524,91 @@ Course Material:
             return {
                 'status': 'error',
                 'message': f'Error deleting folder: {str(e)}'
+            }
+
+    def list_documents_in_folder(self, folder_id: str, user_id: str) -> Dict:
+        """List all documents in a specific folder for a specific user"""
+        try:
+            if not folder_id or not user_id:
+                return {
+                    'status': 'error',
+                    'message': 'Folder ID and User ID are required'
+                }
+            
+            # Check if MongoDB is available
+            if not self.mongo_client:
+                return {
+                    'status': 'error',
+                    'message': 'Database connection not available'
+                }
+            
+            # Get folders collection to verify folder ownership
+            folders_collection = self.mongo_client[self.db_name]['folders']
+            
+            # Check if the folder exists and belongs to the user
+            folder = folders_collection.find_one({
+                'folder_id': folder_id,
+                'user_id': user_id
+            })
+            
+            if not folder:
+                return {
+                    'status': 'error',
+                    'message': 'Folder not found or you do not have permission to access it'
+                }
+            
+            # Get documents collection
+            documents_collection = self.collection
+            
+            # Find all documents that belong to this folder and user
+            pipeline = [
+                {"$match": {
+                    "folder_id": folder_id,
+                    "user_id": user_id,
+                    "file_id": {"$exists": True}
+                }},
+                {"$group": {
+                    "_id": "$file_id",
+                    "filename": {"$first": "$filename"},
+                    "upload_timestamp": {"$first": "$upload_timestamp"},
+                    "file_type": {"$first": "$file_type"},
+                    "document_count": {"$sum": 1},
+                    "total_text_length": {"$sum": {"$strLenCP": "$text"}},
+                    "folder_id": {"$first": "$folder_id"}
+                }},
+                {"$sort": {"upload_timestamp": -1}}
+            ]
+            
+            documents = list(documents_collection.aggregate(pipeline))
+            
+            # Format the response
+            document_list = []
+            for doc in documents:
+                document_list.append({
+                    'file_id': doc['_id'],
+                    'filename': doc.get('filename', 'Unknown'),
+                    'upload_timestamp': doc.get('upload_timestamp'),
+                    'file_type': doc.get('file_type', 'unknown'),
+                    'document_count': doc.get('document_count', 0),
+                    'total_text_length': doc.get('total_text_length', 0),
+                    'folder_id': doc.get('folder_id')
+                })
+            
+            logger.info(f"Found {len(document_list)} documents in folder {folder_id} for user {user_id}")
+            
+            return {
+                'status': 'success',
+                'documents': document_list,
+                'count': len(document_list),
+                'folder_id': folder_id,
+                'folder_name': folder.get('folder_name', 'Unknown')
+            }
+            
+        except Exception as e:
+            logger.error(f"Error listing documents in folder: {str(e)}")
+            return {
+                'status': 'error',
+                'message': f'Error listing documents in folder: {str(e)}'
             }
 
 # Global service instance - using lazy initialization

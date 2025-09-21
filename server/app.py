@@ -189,6 +189,9 @@ def upload_file():
         if not allowed_file(file.filename, ALLOWED_PDF_EXTENSIONS.union(ALLOWED_IMAGE_EXTENSIONS)):
             return jsonify({'error': 'Invalid file type. Only PDF and image files are allowed.'}), 400
         
+        # Get optional folder_id from form data
+        folder_id = request.form.get('folder_id', None)
+        
         filename = secure_filename(file.filename)
         file_ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
         
@@ -198,6 +201,9 @@ def upload_file():
             extraction_result = get_educational_service().extract_text_from_pdf(file, filename, user_id=request.current_user['user_id'])
             
             if extraction_result['status'] == 'success':
+                # Add folder_id to metadata if provided
+                if folder_id:
+                    extraction_result['metadata']['folder_id'] = folder_id
                 # Add extracted text to RAG system with file metadata
                 file_id = extraction_result['metadata']['file_id']
                 rag_result = get_educational_service().add_documents_to_rag(
@@ -236,6 +242,10 @@ def upload_file():
             extraction_result = get_educational_service().extract_text_from_image(file, filename)
             
             if extraction_result['status'] in ['success', 'warning']:
+                # Add folder_id to metadata if provided
+                if folder_id:
+                    extraction_result['metadata']['folder_id'] = folder_id
+                    
                 if extraction_result['text']:
                     # Add extracted text to RAG system with file metadata
                     file_id = extraction_result['metadata']['file_id']
@@ -243,7 +253,8 @@ def upload_file():
                         [extraction_result['text']], 
                         [f"Image: {filename}"],
                         [file_id],
-                        [extraction_result['metadata']]
+                        [extraction_result['metadata']],
+                        user_id=request.current_user['user_id']
                     )
                     
                     return jsonify({
@@ -288,6 +299,9 @@ def upload_file():
 def upload_multiple_files():
     """Upload and process multiple PDF and image files for RAG"""
     try:
+        # Get optional folder_id from form data
+        folder_id = request.form.get('folder_id', None)
+        
         # Collect all files from different possible form field names
         files = []
         filenames = []
@@ -341,7 +355,7 @@ def upload_multiple_files():
                 
                 # Process based on file type
                 if file_ext in ALLOWED_PDF_EXTENSIONS:
-                    extraction_result = get_educational_service().extract_text_from_pdf(file, filename)
+                    extraction_result = get_educational_service().extract_text_from_pdf(file, filename, user_id=request.current_user['user_id'])
                 elif file_ext in ALLOWED_IMAGE_EXTENSIONS:
                     extraction_result = get_educational_service().extract_text_from_image(file, filename)
                 else:
@@ -352,13 +366,18 @@ def upload_multiple_files():
                     continue
                 
                 if extraction_result['status'] == 'success' and extraction_result['text']:
+                    # Add folder_id to metadata if provided
+                    if folder_id:
+                        extraction_result['metadata']['folder_id'] = folder_id
+                    
                     # Add to RAG system
                     file_id = extraction_result['metadata']['file_id']
                     rag_result = get_educational_service().add_documents_to_rag(
                         [extraction_result['text']], 
                         [filename],
                         [file_id],
-                        [extraction_result['metadata']]
+                        [extraction_result['metadata']],
+                        user_id=request.current_user['user_id']
                     )
                     
                     results.append({
@@ -466,6 +485,32 @@ def list_folders():
 
     except Exception as e:
         logger.error(f"Error listing folders: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+@app.route('/api/list_docs_from_folder/<folder_id>', methods=['GET'])
+@require_auth
+def list_docs_from_folder(folder_id):
+    """List all documents in a specific folder for the authenticated user"""
+    try:
+        user_id = request.current_user['user_id']
+        result = get_educational_service().list_documents_in_folder(folder_id, user_id=user_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'folder_id': folder_id,
+                'documents': result['documents'],
+                'count': result['count'],
+                'status': 'success'
+            })
+        else:
+            return jsonify({
+                'folder_id': folder_id,
+                'error': result.get('message', 'Failed to retrieve documents'),
+                'status': 'error'
+            }), 404
+
+    except Exception as e:
+        logger.error(f"Error listing documents from folder: {str(e)}")
         return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/folders/<folder_id>', methods=['DELETE'])

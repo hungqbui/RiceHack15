@@ -1,25 +1,28 @@
-import React, { useState } from "react";
+import React from "react";
+import { useChosenDocuments } from "../contexts/ChosenDocumentsContext";
 
-const DocumentItem = ({ documentName, docId, setFolderIds } : any) => {
-    const [isChecked, setIsChecked] = useState(false);
+interface DocumentItemProps {
+  documentName: string;
+  docId: string;
+}
+
+const DocumentItem: React.FC<DocumentItemProps> = ({ documentName, docId }) => {
+    const { chosenDocuments, toggleDocument } = useChosenDocuments();
 
     const handleCheckboxChange = () => {
-        console.log("Checkbox changed for document:", documentName, "Checked:", !isChecked);
-        if (!isChecked) {
-            setFolderIds((prev : any) => [...prev, docId]);
-        }
-        else {
-            setFolderIds((prev: string[]) => {
-                return prev.filter(id => id !== docId);
-            });
-        }
-        setIsChecked(!isChecked);
+        console.log("Checkbox changed for document:", documentName, "Doc ID:", docId);
+        toggleDocument(docId);
     };
 
     return (
         <li className="document-item">
             <span>{documentName}</span>
-            <input type="checkbox" checked={isChecked} onChange={handleCheckboxChange} />
+            <input 
+                type="checkbox" 
+                checked={chosenDocuments.has(docId)} 
+                onChange={handleCheckboxChange}
+                title={`Select ${documentName} for search context`}
+            />
         </li>
     );
 }

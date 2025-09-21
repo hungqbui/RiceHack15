@@ -18,6 +18,8 @@ const styles = `
         background-size: 400% 400%;
         animation: gradientShift 30s linear infinite;
         overflow: hidden;
+        
+
     }
 
 @keyframes gradientShift {

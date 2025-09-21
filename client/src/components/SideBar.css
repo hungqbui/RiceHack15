@@ -266,16 +266,10 @@ body.dark-mode .document-item:hover, body.dark-mode .folder-item:hover {
 }
 .sidebar button.my-folder-btn {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: row;
+    align-items: flex-start;
     width: 100%;
     background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 1rem;
-    margin-bottom: 1rem;
 }
 
 /* Right Sidebar Buttons */
@@ -325,14 +319,14 @@ body.dark-mode .document-item:hover, body.dark-mode .folder-item:hover {
     color: black;
 }
 .toggle-left {
-    left: 240px;
+    left: 260px;
     transition: left 0.3s ease-in-out;
 }
 .toggle-left.collapsed {
     left: 0px;
 }
 .toggle-right {
-    right: 240px;
+    right: 260px;
     transition: right 0.3s ease-in-out;
 }
 .toggle-right.collapsed {
@@ -509,4 +503,153 @@ body.dark-mode .document-item:hover, body.dark-mode .folder-item:hover {
     border-color: #9ca3af;
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+/* Upload Progress Animation */
+@keyframes progress {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Fancy Loader Styles */
+.fancy-loader-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.fancy-loader {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.loader-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: linear-gradient(45deg, #007bff, #60a5fa);
+    animation: loader-bounce 1.4s ease-in-out infinite both;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+}
+
+.loader-dot:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.loader-dot:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.loader-dot:nth-child(3) {
+    animation-delay: 0s;
+}
+
+@keyframes loader-bounce {
+    0%, 80%, 100% {
+        transform: scale(0.8) translateY(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1.2) translateY(-10px);
+        opacity: 1;
+    }
+}
+
+.loader-text {
+    color: var(--subtle-text-color);
+    font-size: 14px;
+    font-weight: 500;
+    animation: loader-pulse 2s ease-in-out infinite;
+}
+
+@keyframes loader-pulse {
+    0%, 100% {
+        opacity: 0.7;
+    }
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Alternative Skeleton Loader for documents and folders */
+.skeleton-loader {
+    padding: 10px 0;
+}
+
+.skeleton-item {
+    height: 20px;
+    background: linear-gradient(90deg, 
+        rgba(200, 200, 200, 0.2) 25%, 
+        rgba(200, 200, 200, 0.4) 50%, 
+        rgba(200, 200, 200, 0.2) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.skeleton-item:nth-child(1) { width: 85%; }
+.skeleton-item:nth-child(2) { width: 70%; }
+.skeleton-item:nth-child(3) { width: 90%; }
+.skeleton-item:nth-child(4) { width: 60%; }
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+/* Spinner Loader Alternative */
+.spinner-loader {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 30px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(0, 123, 255, 0.1);
+    border-left-color: #007bff;
+    border-radius: 50%;
+    animation: spinner-spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spinner-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Loading state for buttons */
+.loading-button {
+    position: relative;
+    color: transparent !important;
+}
+
+.loading-button::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top-color: currentColor;
+    border-radius: 50%;
+    animation: spinner-spin 1s linear infinite;
 }

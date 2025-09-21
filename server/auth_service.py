@@ -202,6 +202,8 @@ def require_auth(f):
     """Decorator to require authentication for endpoints"""
     @wraps(f)
     def decorated_function(*args, **kwargs):
+        from flask import g
+        
         auth_header = request.headers.get('Authorization')
         
         if not auth_header:
@@ -220,11 +222,15 @@ def require_auth(f):
         if not payload:
             return jsonify({'error': 'Invalid or expired token'}), 401
         
-        # Add user info to request for use in endpoint
+        # Add user info to both request and Flask's g for use in endpoints
         request.current_user = {
             'user_id': payload['user_id'],
             'username': payload['username']
         }
+        
+        # Also set in Flask's g object
+        g.user_id = payload['user_id']
+        g.username = payload['username']
         
         return f(*args, **kwargs)
     

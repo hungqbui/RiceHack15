@@ -1,6 +1,8 @@
 #root {
   text-align: center;
   width: 100vw;
+  display: flex;
+  justify-content: center;
 }
 
 .logo {
