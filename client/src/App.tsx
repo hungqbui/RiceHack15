@@ -9,6 +9,7 @@ import ProtectedRoute from './components/ProtectedRoute.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
 import QuizExam from './pages/QuizExam.tsx';
 import { QuizContextProvider } from './contexts/QuizContext.tsx';
+import Convo from './pages/convo.tsx';
 
 function App() {
   return (
@@ -18,6 +19,8 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<ProtectedRoute><LandingPage /></ProtectedRoute>} />
           <Route path="/quiz" element={<ProtectedRoute><QuizExam /></ProtectedRoute>} />
+          <Route path="/convo" element={<ProtectedRoute><Convo /></ProtectedRoute>} />
+
         </Routes>
       </QuizContextProvider>
     </AuthProvider>
