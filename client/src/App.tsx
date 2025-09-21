@@ -7,20 +7,14 @@ import LandingPage from './pages/LandingPage.tsx';
 import Login from './pages/Login.tsx';
 import ProtectedRoute from './components/ProtectedRoute.tsx';
 import { AuthProvider } from './contexts/AuthContext.tsx';
+import QuizExam from './pages/QuizExam.tsx';
 
 function App() {
   return (
     <AuthProvider>
       <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route 
-          path="/" 
-          element={
-            <ProtectedRoute>
-              <LandingPage />
-            </ProtectedRoute>
-          } 
-        />
+        <Route path="/" element={<LandingPage />} />
+
       </Routes>
     </AuthProvider>
   )
