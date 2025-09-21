@@ -242,11 +242,23 @@ const SideBar = () => {
     return (
         <div className="sidebar-container">
             <button
-                className={`sidebar-toggle toggle-left ${sidebarCollapsed ? 'collapsed' : ''}`}
-                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            >
-                {sidebarCollapsed ? '>' : '<'}
-            </button>
+  className={`sidebar-toggle toggle-left ${!sidebarCollapsed ? 'collapsed active' : ''}`}
+  onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+  aria-label={sidebarCollapsed ? "Open sidebar" : "Close sidebar"}
+>
+  <span
+    className={`block w-6 h-0.5 mb-1 rounded transition-all duration-300
+    ${sidebarCollapsed ? "rotate-45 translate-y-2 bg-gray-600 dark:bg-gray-100" : "bg-black dark:bg-white"}`}
+  ></span>
+  <span
+    className={`block w-6 h-0.5 mb-1 rounded transition-all duration-300
+    ${sidebarCollapsed ? "opacity-0" : "bg-black dark:bg-white"}`}
+  ></span>
+  <span
+    className={`block w-6 h-0.5 rounded transition-all duration-300
+    ${sidebarCollapsed ? "-rotate-45 -translate-y-2 bg-gray-600 dark:bg-gray-100" : "bg-black dark:bg-white"}`}
+  ></span>
+</button>
             <aside className={`sidebar sidebar-left ${sidebarCollapsed ? 'collapsed' : ''}`}>
                 <div className="sidebar-section">
                     <div className="folder-bar" style={{ display: 'flex', alignItems: 'center' }}>
