@@ -97,7 +97,7 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
             {question.options?.map((option, optionIndex) => (
               <div key={optionIndex} className="flex items-center space-x-2">
                 <span className="font-semibold text-gray-700 w-6">
-                  {String.fromCharCode(65 + optionIndex)})
+                  {String.fromCharCode(65 + optionIndex)}
                 </span>
                 <input
                   type="text"
