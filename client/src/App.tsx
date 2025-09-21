@@ -17,9 +17,7 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/" element={<ProtectedRoute><LandingPage /></ProtectedRoute>} />
-          {/* <Route path="/quiz" element={<ProtectedRoute><QuizExam /></ProtectedRoute>} /> */}
-          <Route path="/quiz" element={<QuizExam />} />
-
+          <Route path="/quiz" element={<ProtectedRoute><QuizExam /></ProtectedRoute>} />
         </Routes>
       </QuizContextProvider>
     </AuthProvider>

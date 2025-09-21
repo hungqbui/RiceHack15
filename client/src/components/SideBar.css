@@ -13,6 +13,7 @@ body.dark-mode {
     --text-color: #f9fafb;
     --subtle-text-color: #9ca3af;
     --border-color: #374151;
+
 }
 body {
     margin: 0;
@@ -26,46 +27,54 @@ body {
 .app-container {
     display: flex;
     overflow: hidden;
-    height: 100%;
-    width: 100%;
+    height: 100vh;
+    width: 100vw;
 }
 .sidebar {
     padding: 20px;
     background-color: var(--surface-color);
     border-right: 1px solid var(--border-color);
     transition: all 0.3s ease-in-out;
-    overflow-y: auto;
+    overflow-y: hidden;
     flex-shrink: 0;
     height: 100vh;
 }
 .sidebar-left {
+    position: relative;
     width: 250px;
     border-right: 1px solid var(--border-color);
 }
-    .sidebar-left.collapsed {
+.sidebar-left.collapsed {
     width: 0;
     padding: 20px 0;
     opacity: 0;
     transform: translateX(-100%);
 }
 .sidebar-right {
-    width: 220px;
-    border-left: 1px solid var(--border-color);
+    position: relative;
+    right: 0;
+    top: 0;
+    width: 250px;
+    border-right: 1px solid var(--border-color);
 }
 .sidebar-right.collapsed {
     width: 0;
-    padding: 20px 0;
     opacity: 0;
-    transform: translateX(100%);
+    transform: translateX(-100%);
+
 }
 
 .main-content {
-    flex-grow: 1;
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    overflow-y: auto;
-    width: 100vw;
+    overflow-y: hidden;
+    overflow-x: hidden;
+    min-width: 0; /* Prevents flexbox overflow */
+    background: linear-gradient(135deg, #e0f7fa, #0077b6, #e0f7fa);
+    background-size: 300% 300%;
+    animation: gradientShift 1ms linear infinite;
 }
 
 /* Header Controls */
@@ -307,19 +316,20 @@ body.dark-mode .document-item:hover, body.dark-mode .folder-item:hover {
     align-items: center;
     z-index: 10;
     box-shadow: var(--shadow);
+    color: black;
 }
 .toggle-left {
-    left: 250px;
+    left: 240px;
     transition: left 0.3s ease-in-out;
 }
-    .toggle-left.collapsed {
+.toggle-left.collapsed {
     left: 0px;
 }
-    .toggle-right {
-    right: 220px;
-        transition: right 0.3s ease-in-out;
+.toggle-right {
+    right: 240px;
+    transition: right 0.3s ease-in-out;
 }
-    .toggle-right.collapsed {
+.toggle-right.collapsed {
     right: 0px;
 }
 
@@ -345,9 +355,16 @@ body.dark-mode .document-item:hover, body.dark-mode .folder-item:hover {
 }
 
 .sidebar-container {
-    height: 100vh;
+    height: 98vh;
     position: absolute;
-    left: 30px;
+    left: 0;
+    top: 0
+}
+
+.sidebar-container-right {
+    height: 980vh;
+    position: absolute;
+    right: 0;
     top: 0
 }
 

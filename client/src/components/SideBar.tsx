@@ -25,7 +25,7 @@ const SideBar = ({  } : any) => {
             >
                 {sidebarCollapsed ? '>' : '<'}
             </button>
-            <aside className={`sidebar sidebar-right ${sidebarCollapsed ? 'collapsed' : ''}`}>
+            <aside className={`sidebar sidebar-left ${sidebarCollapsed ? 'collapsed' : ''}`}>
                 <div className="sidebar-section">
                     <h2>{chosenFolder}</h2>
                     <ul className="document-list">

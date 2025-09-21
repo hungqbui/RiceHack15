@@ -4,6 +4,7 @@ import Loader from "../components/Loader.tsx";
 import SideBar from "../components/SideBar.tsx";
 import Clock from "../components/Clock.tsx";
 import OwlIcon from "/logo.png";
+import SideBarRight from "../components/SideBarRight.tsx";
 import { useAuth } from "../contexts/AuthContext";
 
 const LandingPage = () => {
@@ -14,10 +15,8 @@ const LandingPage = () => {
   const [time, setTime] = useState(new Date());
   const [searchTerm, setSearchTerm] = useState("");
   const [chosenFolders, setChosenFolders] = useState<Set<string>>(new Set());
-  const [SidebarCollapsed, setSidebarCollapsed] = useState(false);
   
   const { logout, user } = useAuth();
-  
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,22 +39,22 @@ const LandingPage = () => {
                 <div className="header-container">
                   <div className="header-controls">
                       <Clock time={time} />
-                      <div className="user-info">
-                          <span>Welcome, {user?.username || user?.email}!</span>
-                          <button 
-                              onClick={logout}
-                              className="logout-button"
-                              title="Logout"
-                          >
-                              🚪 Logout
-                          </button>
-                      </div>
                       <div className="dark-mode-toggle" onMouseUp={() => { setDarkMode(!darkMode) }}>
                           <span>{darkMode ? '🌙' : '☀️'} Dark Mode</span>
                           <label className="toggle-switch">
                               <input id="dark-mode-toggle" type="checkbox" checked={darkMode} readOnly />
                               <span className="slider"></span>
                           </label>
+                      </div>
+                      <div className="user-info">
+                          <button 
+                              onClick={logout}
+                              className="logout-button"
+                              title="Logout"
+                              style={{ margin: "0 10px" }}
+                          >
+                              🚪 Logout
+                          </button>
                       </div>
                   </div>
                 </div>
@@ -93,7 +92,7 @@ const LandingPage = () => {
                     </form>
                 </div>
             </main>
-
+        <SideBarRight />
     </div>
   );
 };

@@ -1,5 +1,5 @@
 const Clock = ({time} : any) => {
-    return <div className="clock" style={{ marginRight: '10px' }}>
+    return <div className="clock" >
         <span>🕒</span>
         {time.toLocaleTimeString()}
     </div>

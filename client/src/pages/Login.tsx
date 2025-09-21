@@ -8,24 +8,23 @@ const styles = `
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
 
     body {
-    font-family: 'Inter', sans-serif;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    background: linear-gradient(135deg, #e0f7fa, #0077b6, #e0f7fa);
-    background-size: 400% 400%;
-    animation: gradientShift 30s linear infinite;
-    overflow: hidden;
-}
+        font-family: 'Inter', sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background: linear-gradient(135deg, #e0f7fa, #0077b6, #e0f7fa);
+        background-size: 400% 400%;
+        animation: gradientShift 30s linear infinite;
+        overflow: hidden;
+    }
 
 @keyframes gradientShift {
     0% { background-position: 0% 0%; }
     50% { background-position: 100% 100%; }
     100% { background-position: 0% 0%; }
 }
-
 
     .login-card {
         background-color: #ffffff;
