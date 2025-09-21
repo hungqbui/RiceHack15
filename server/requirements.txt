@@ -2,7 +2,12 @@ Flask==2.3.3
 Flask-CORS==4.0.0
 Flask-SocketIO==5.3.6
 python-dotenv==1.0.0
-langchain==0.0.340
+## langchain pinned caused langsmith dependency conflicts. Use a looser spec
+## to allow pip to resolve a compatible langchain/langchain-core/langsmith set.
+# If you need a specific major version, pin to e.g. 'langchain>=0.0.340,<0.1' or
+# test with the latest compatible release. Leaving an open min version lets pip
+# choose compatible transitive deps.
+langchain>=0.0.340
 tiktoken==0.5.1
 numpy==1.24.3
 requests==2.31.0
@@ -13,7 +18,7 @@ langchain-google-genai==1.0.10
 google-generativeai>=0.7.0
 
 # MongoDB Vector Database
-pymongo==4.6.0
+pymongo==4.6.1
 langchain-mongodb==0.1.6
 
 # PDF processing
@@ -32,7 +37,7 @@ Werkzeug==2.3.7
 python-socketio[client]==5.9.0
 
 # Testing
-requests==2.31.0
+# (requests already specified above)
 
 # Authentication and Security
 PyJWT==2.8.0
