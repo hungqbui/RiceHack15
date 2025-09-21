@@ -72,28 +72,35 @@ const LandingPage = () => {
       <div className="app-container">
         <SideBar />
       <main className="main-content">
-                <div className="header-container">
-                  <div className="header-controls">
-                      <Clock time={time} />
-                      <div className="dark-mode-toggle" onMouseUp={() => { setDarkMode(!darkMode) }}>
-                          <span>{darkMode ? '🌙' : '☀️'} Dark Mode</span>
-                          <label className="toggle-switch">
-                              <input id="dark-mode-toggle" type="checkbox" checked={darkMode} readOnly />
-                              <span className="slider"></span>
-                          </label>
-                      </div>
-                      <div className="user-info">
-                          <button 
-                              onClick={logout}
-                              className="logout-button"
-                              title="Logout"
-                              style={{ margin: "0 10px" }}
-                          >
-                              🚪 Logout
-                          </button>
-                      </div>
-                  </div>
+          <div className="header-container">
+            <div className="header-controls">
+                <div className="clock-margin">
+                  <Clock time={time} />
                 </div>
+                <div className="dark-mode-toggle" onMouseUp={() => { setDarkMode(!darkMode) }}>
+                    <span>{darkMode ? '🌙' : '☀️'} Dark Mode</span>
+                    <label className="toggle-switch">
+                        <input id="dark-mode-toggle" type="checkbox" checked={darkMode} readOnly />
+                        <span className="slider"></span>
+                    </label>
+                </div>
+                <div className="user-info">
+                    <button 
+                        onClick={logout}
+                        className="logout-button"
+                        title="Logout"
+                        style={{ 
+                          margin: "0 10px", 
+                          borderRadius: "16px", 
+                          backgroundColor: "lightred",
+                          height: "40px"
+                        }}
+                    >
+                        🚪 Logout
+                    </button>
+                </div>
+            </div>
+          </div>
 
           <div className="center-area">
             {isLoading ? (
