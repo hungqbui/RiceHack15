@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from flask_socketio import SocketIO, emit, disconnect
 import os
@@ -409,32 +409,107 @@ def upload_multiple_files():
 @app.route('/api/createFolder', methods=['POST'])
 @require_auth
 def create_folder():
-    data = request.get_json()
-    folder_name = data.get('folder_name')
+    """Create a new folder for the authenticated user"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'Request body is required'}), 400
+        
+        # Handle both 'name' and 'folder_name' for flexibility
+        folder_name = data.get('name') or data.get('folder_name')
 
-    if not folder_name:
-        return jsonify({'error': 'Folder name is required'}), 400
+        if not folder_name:
+            return jsonify({'error': 'Folder name is required'}), 400
 
-    user_id = request.current_user['user_id']
-    result = get_educational_service().create_folder(folder_name, user_id=user_id)
+        user_id = request.current_user['user_id']
+        result = get_educational_service().create_folder(folder_name, user_id=user_id)
 
-    if result['status'] == 'success':
-        return jsonify({'message': 'Folder created successfully', 'folder_id': result['folder_id']}), 201
-    else:
-        return jsonify({'error': result.get('message', 'Failed to create folder'), 'status': 'error'}), 500
+        if result['status'] == 'success':
+            return jsonify({
+                'message': 'Folder created successfully', 
+                'folder_id': result['folder_id'],
+                'folder_name': result['folder_name'],
+                'status': 'success'
+            }), 201
+        else:
+            return jsonify({
+                'error': result.get('message', 'Failed to create folder'), 
+                'status': 'error'
+            }), 400
+            
+    except Exception as e:
+        logger.error(f"Error in create_folder endpoint: {str(e)}")
+        return jsonify({
+            'error': f'Server error: {str(e)}', 
+            'status': 'error'
+        }), 500
+
+@app.route('/api/folders', methods=['GET'])
+@require_auth
+def list_folders():
+    """List all folders for the authenticated user"""
+    try:
+        user_id = request.current_user['user_id']
+        result = get_educational_service().list_folders(user_id=user_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'folders': result['folders'],
+                'status': 'success'
+            })
+        else:
+            return jsonify({
+                'error': result.get('message', 'Failed to retrieve folders'),
+                'status': 'error'
+            }), 404
+
+    except Exception as e:
+        logger.error(f"Error listing folders: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
+
+@app.route('/api/folders/<folder_id>', methods=['DELETE'])
+@require_auth
+def delete_folder(folder_id):
+    """Delete a folder belonging to the authenticated user"""
+    try:
+        user_id = request.current_user['user_id']
+        result = get_educational_service().delete_folder(folder_id, user_id=user_id)
+
+        if result['status'] == 'success':
+            return jsonify({
+                'message': 'Folder deleted successfully',
+                'folder_id': folder_id,
+                'status': 'success'
+            }), 200
+        else:
+            return jsonify({
+                'error': result.get('message', 'Failed to delete folder'),
+                'status': 'error'
+            }), 400
+
+    except Exception as e:
+        logger.error(f"Error deleting folder: {str(e)}")
+        return jsonify({'error': str(e), 'status': 'error'}), 500
 
 @app.route('/api/files', methods=['GET'])
 @require_auth
 def list_files():
-    """List all uploaded files with their metadata"""
+    """List all uploaded files with their metadata for the authenticated user"""
     try:
+        # Get user_id from the JWT token
+        user_id = g.user_id
+        
         # Get all unique file IDs from the database
         service = get_educational_service()
         collection = service.collection
         
-        # Aggregate to get unique files with their metadata
+        # Aggregate to get unique files with their metadata, filtered by user_id
         pipeline = [
-            {"$match": {"metadata.file_id": {"$exists": True}}},
+            {"$match": {
+                "metadata.file_id": {"$exists": True},
+                "metadata.user_id": user_id
+            }},
             {"$group": {
                 "_id": "$metadata.file_id",
                 "filename": {"$first": "$metadata.filename"},

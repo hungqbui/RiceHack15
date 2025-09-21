@@ -70,7 +70,7 @@ const LandingPage = () => {
     <>
       <style dangerouslySetInnerHTML={{ __html: gradientStyles }} />
       <div className="app-container">
-        <SideBar left={true} />
+        <SideBar />
       <main className="main-content">
                 <div className="header-container">
                   <div className="header-controls">

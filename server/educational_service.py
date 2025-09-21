@@ -84,6 +84,7 @@ Educational response:"""
             self.embeddings = None
             self.chat_model = None
             self.vector_store = None
+            self.collection = None
     
     def _init_mongodb(self):
         """Initialize MongoDB connection and vector store"""
@@ -95,9 +96,12 @@ Educational response:"""
             self.mongo_client.admin.command('ping')
             logger.info("Successfully connected to MongoDB")
             
+            # Get the collection reference
+            self.collection = self.mongo_client[self.db_name][self.collection_name]
+            
             # Initialize MongoDB Atlas Vector Search
             self.vector_store = MongoDBAtlasVectorSearch(
-                collection=self.mongo_client[self.db_name][self.collection_name],
+                collection=self.collection,
                 embedding=self.embeddings,
                 index_name="vector_index",
                 text_key="text",
@@ -111,6 +115,7 @@ Educational response:"""
             logger.error(f"Error connecting to MongoDB: {str(e)}")
             self.mongo_client = None
             self.vector_store = None
+            self.collection = None
     
     def _clean_extracted_text(self, text: str) -> str:
         """Clean and normalize extracted text from PDFs to fix spacing issues"""
@@ -539,7 +544,7 @@ Educational response:"""
                 }
             
             # Query MongoDB collection directly for file-specific documents
-            collection = self.mongo_client[self.db_name][self.collection_name]
+            collection = self.collection
             
             # Find documents with matching file_id and user_id
             query_filter = {'file_id': file_id}
@@ -917,7 +922,7 @@ Since no specific educational materials are available in the knowledge base, ple
                 }
             
             # Get MongoDB collection statistics
-            collection = self.mongo_client[self.db_name][self.collection_name]
+            collection = self.collection
             doc_count = collection.count_documents({})
             
             return {
@@ -941,7 +946,7 @@ Since no specific educational materials are available in the knowledge base, ple
         try:
             if self.mongo_client:
                 # Clear MongoDB collection
-                collection = self.mongo_client[self.db_name][self.collection_name]
+                collection = self.collection
                 result = collection.delete_many({})
                 deleted_count = result.deleted_count
                 
@@ -1284,6 +1289,179 @@ Course Material:
                 'quiz': [],
                 'status': 'error',
                 'message': f'Error generating quiz: {str(e)}'
+            }
+
+    def create_folder(self, folder_name: str, user_id: str) -> Dict:
+        """Create a new folder for the user"""
+        try:
+            if not folder_name or not folder_name.strip():
+                return {
+                    'status': 'error',
+                    'message': 'Folder name cannot be empty'
+                }
+            
+            if not user_id:
+                return {
+                    'status': 'error',
+                    'message': 'User ID is required'
+                }
+            
+            # Clean folder name
+            folder_name = folder_name.strip()
+            
+            # Generate folder ID
+            folder_id = str(uuid.uuid4())
+            
+            # Check if MongoDB is available
+            if not self.mongo_client:
+                return {
+                    'status': 'error',
+                    'message': 'Database connection not available'
+                }
+            
+            # Get folders collection
+            folders_collection = self.mongo_client[self.db_name]['folders']
+            
+            # Check if folder name already exists for this user
+            existing_folder = folders_collection.find_one({
+                'user_id': user_id,
+                'folder_name': folder_name
+            })
+            
+            if existing_folder:
+                return {
+                    'status': 'error',
+                    'message': f'Folder "{folder_name}" already exists'
+                }
+            
+            # Create folder document
+            folder_doc = {
+                'folder_id': folder_id,
+                'folder_name': folder_name,
+                'user_id': user_id,
+                'created_at': datetime.now(),
+                'updated_at': datetime.now(),
+                'file_count': 0
+            }
+            
+            # Insert folder into database
+            result = folders_collection.insert_one(folder_doc)
+            
+            if result.inserted_id:
+                logger.info(f"Created folder '{folder_name}' for user {user_id}")
+                return {
+                    'status': 'success',
+                    'message': f'Folder "{folder_name}" created successfully',
+                    'folder_id': folder_id,
+                    'folder_name': folder_name
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'message': 'Failed to create folder in database'
+                }
+                
+        except Exception as e:
+            logger.error(f"Error creating folder: {str(e)}")
+            return {
+                'status': 'error',
+                'message': f'Error creating folder: {str(e)}'
+            }
+
+    def list_folders(self, user_id: str) -> Dict:
+        """List all folders for a specific user"""
+        try:
+            if not user_id:
+                return {
+                    'status': 'error',
+                    'message': 'User ID is required'
+                }
+            
+            # Check if MongoDB is available
+            if not self.mongo_client:
+                return {
+                    'status': 'error',
+                    'message': 'Database connection not available'
+                }
+            
+            # Get folders collection
+            folders_collection = self.mongo_client[self.db_name]['folders']
+            
+            # Find all folders for this user
+            folders_cursor = folders_collection.find(
+                {'user_id': user_id},
+                {'_id': 0}  # Exclude MongoDB ObjectId
+            ).sort('created_at', -1)  # Sort by creation date, newest first
+            
+            folders = list(folders_cursor)
+            
+            # Format the folders for response
+            folder_list = []
+            for folder in folders:
+                folder_list.append({
+                    'folder_id': folder.get('folder_id'),
+                    'folder_name': folder.get('folder_name'),
+                    'created_at': folder.get('created_at'),
+                    'updated_at': folder.get('updated_at'),
+                    'file_count': folder.get('file_count', 0)
+                })
+            
+            logger.info(f"Retrieved {len(folder_list)} folders for user {user_id}")
+            return {
+                'status': 'success',
+                'folders': folder_list,
+                'total_folders': len(folder_list)
+            }
+            
+        except Exception as e:
+            logger.error(f"Error listing folders: {str(e)}")
+            return {
+                'status': 'error',
+                'message': f'Error listing folders: {str(e)}'
+            }
+
+    def delete_folder(self, folder_id: str, user_id: str) -> Dict:
+        """Delete a folder belonging to a specific user"""
+        try:
+            if not folder_id or not user_id:
+                return {
+                    'status': 'error',
+                    'message': 'Folder ID and User ID are required'
+                }
+            
+            # Check if MongoDB is available
+            if not self.mongo_client:
+                return {
+                    'status': 'error',
+                    'message': 'Database connection not available'
+                }
+            
+            # Get folders collection
+            folders_collection = self.mongo_client[self.db_name]['folders']
+            
+            # Find and delete the folder (only if it belongs to the user)
+            result = folders_collection.delete_one({
+                'folder_id': folder_id,
+                'user_id': user_id
+            })
+            
+            if result.deleted_count > 0:
+                logger.info(f"Deleted folder {folder_id} for user {user_id}")
+                return {
+                    'status': 'success',
+                    'message': 'Folder deleted successfully'
+                }
+            else:
+                return {
+                    'status': 'error',
+                    'message': 'Folder not found or you do not have permission to delete it'
+                }
+                
+        except Exception as e:
+            logger.error(f"Error deleting folder: {str(e)}")
+            return {
+                'status': 'error',
+                'message': f'Error deleting folder: {str(e)}'
             }
 
 # Global service instance - using lazy initialization

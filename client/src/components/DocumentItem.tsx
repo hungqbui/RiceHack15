@@ -1,9 +1,18 @@
 import React, { useState } from "react";
 
-const DocumentItem = ({ documentName, docId } : { documentName: string, docId: string }) => {
+const DocumentItem = ({ documentName, docId, setFolderIds } : any) => {
     const [isChecked, setIsChecked] = useState(false);
 
     const handleCheckboxChange = () => {
+        console.log("Checkbox changed for document:", documentName, "Checked:", !isChecked);
+        if (!isChecked) {
+            setFolderIds((prev : any) => [...prev, docId]);
+        }
+        else {
+            setFolderIds((prev: string[]) => {
+                return prev.filter(id => id !== docId);
+            });
+        }
         setIsChecked(!isChecked);
     };
 
