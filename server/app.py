@@ -74,7 +74,7 @@ def register():
         
         auth_service = get_auth_service()
         result = auth_service.register_user(username, email, password)
-        
+        print(result)
         if result['success']:
             return jsonify({
                 'message': result['message'],
@@ -93,18 +93,19 @@ def login():
     """User login endpoint"""
     try:
         data = request.get_json()
+        print(data, flush=True)
         if not data:
             return jsonify({'error': 'No data provided'}), 400
-        
-        username = data.get('username', '').strip()
+
+        email = data.get('email', '').strip()
         password = data.get('password', '')
-        
-        if not username or not password:
-            return jsonify({'error': 'Username and password are required'}), 400
-        
+
+        if not email or not password:
+            return jsonify({'error': 'Email and password are required'}), 400
+
         auth_service = get_auth_service()
-        result = auth_service.login_user(username, password)
-        
+        result = auth_service.login_user(email, password)
+
         if result['success']:
             return jsonify({
                 'message': result['message'],

@@ -137,12 +137,12 @@ class AuthService:
             logger.error(f"Error registering user: {e}")
             return {'success': False, 'message': 'Registration failed'}
 
-    def login_user(self, username: str, password: str) -> dict:
+    def login_user(self, email: str, password: str) -> dict:
         """Authenticate user and return token"""
         try:
             # Find user by username or email
             user = self.users_collection.find_one({
-                '$or': [{'username': username}, {'email': username}]
+                '$or': [{'username': email}, {'email': email}]
             })
             
             if not user:
